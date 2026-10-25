@@ -21,13 +21,22 @@ const docTemplate = `{
                     "recipes"
                 ],
                 "summary": "List recipes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Owner of the data",
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/controller.recipeDTO"
+                                "$ref": "#/definitions/api.recipeDTO"
                             }
                         }
                     }
@@ -37,15 +46,22 @@ const docTemplate = `{
                 "tags": [
                     "recipes"
                 ],
-                "summary": "Create a new recipe",
+                "summary": "Create a recipe",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Owner of the data",
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "description": "Create recipe payload",
                         "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controller.createRecipeRequest"
+                            "$ref": "#/definitions/api.createRecipeRequest"
                         }
                     }
                 ],
@@ -53,7 +69,21 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/controller.recipeDTO"
+                            "$ref": "#/definitions/api.recipeDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -61,22 +91,27 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "controller.createRecipeRequest": {
+        "api.createRecipeRequest": {
             "type": "object",
             "required": [
                 "name"
             ],
             "properties": {
+                "id": {
+                    "description": "ID is optional; the app sends the one it created, possibly while offline.",
+                    "type": "string",
+                    "maxLength": 64
+                },
                 "name": {
                     "type": "string"
                 }
             }
         },
-        "controller.recipeDTO": {
+        "api.recipeDTO": {
             "type": "object",
             "properties": {
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -90,10 +125,10 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "",
-	BasePath:         "",
+	BasePath:         "/v1",
 	Schemes:          []string{},
-	Title:            "Recipes API",
-	Description:      "Simple recipes service with CRUD endpoints.",
+	Title:            "MamieNellie API",
+	Description:      "Recipes, grocery items and the grocery list for the MamieNellie app.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

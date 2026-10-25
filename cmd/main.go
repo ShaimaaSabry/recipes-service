@@ -1,62 +1,66 @@
 package main
 
 import (
-	"github.com/ShaimaaSabry/recipes/internal/interface/controller"
-	"github.com/ShaimaaSabry/recipes/internal/interface/controller/middleware"
-	"github.com/ShaimaaSabry/recipes/internal/interface/repository/sql"
-	"github.com/ShaimaaSabry/recipes/internal/usecase/createrecipe"
-	"github.com/ShaimaaSabry/recipes/internal/usecase/getrecipes"
-	"github.com/gin-gonic/gin"
+	"context"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 
-	// This import is REQUIRED so the generated docs package registers your spec.
-	_ "github.com/ShaimaaSabry/recipes/docs"
+	// Registers the generated OpenAPI spec for the Swagger UI.
+	_ "github.com/mamienellie/recipes-service/docs"
+	"github.com/mamienellie/recipes-service/internal/platform/config"
+	"github.com/mamienellie/recipes-service/internal/platform/database"
+	"github.com/mamienellie/recipes-service/internal/platform/httpserver"
+	"github.com/mamienellie/recipes-service/internal/recipes"
 )
 
-// @title        Recipes API
+// @title        MamieNellie API
 // @version      1.0
-// @description  Simple recipes service with CRUD endpoints.
+// @description  Recipes, grocery items and the grocery list for the MamieNellie app.
+// @BasePath     /v1
 func main() {
-	recipeController := dependencyInjection()
-
-	startServer(recipeController)
-}
-
-func dependencyInjection() *controller.RecipeController {
-	//recipeRepository := &repository.RecipeInMemoryRepository{}
-
-	dsn := "host=localhost user=postgres password=postgres dbname=recipes port=4444 sslmode=disable TimeZone=UTC"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic(err)
+	if err := run(); err != nil {
+		slog.Error("server stopped", "error", err)
+		os.Exit(1)
 	}
-	recipeRepository := sql.NewRecipeSqlRepository(db)
-
-	getRecipesInteractor := getrecipes.NewInteractor(recipeRepository)
-	createRecipeInteractor := createrecipe.NewInteractor(recipeRepository)
-
-	return controller.NewRecipeController(
-		getRecipesInteractor,
-		createRecipeInteractor,
-	)
 }
 
-func startServer(recipeController *controller.RecipeController) {
-	r := gin.Default()
+func run() error {
+	// Locally the settings come from .env.local; in prod the platform sets real env vars.
+	if os.Getenv("APP_ENV") == "" {
+		_ = godotenv.Load(".env.local")
+	}
+	cfg, err := config.FromEnvironment()
+	if err != nil {
+		return err
+	}
+	if !cfg.IsLocal() {
+		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	}
 
-	r.Use(gin.Logger(), gin.Recovery(), middleware.ErrorHandler())
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	r.POST("/v1/recipes", recipeController.CreateRecipe)
-	r.GET("/v1/recipes", recipeController.GetRecipes)
+	db, err := database.Open(cfg.DatabaseURL, cfg.IsLocal())
+	if err != nil {
+		return err
+	}
+	recipesModule := recipes.New(db)
+	if err := recipesModule.Migrate(ctx); err != nil {
+		return err
+	}
 
-	setupSwagger(r)
+	r := httpserver.New(cfg.IsLocal())
+	v1 := r.Group("/v1", httpserver.RequireOwner())
+	recipesModule.RegisterRoutes(v1)
+	if cfg.IsLocal() {
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
-	r.Run()
-}
-
-func setupSwagger(r *gin.Engine) {
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // UI
+	return httpserver.Run(ctx, r, cfg.Port)
 }

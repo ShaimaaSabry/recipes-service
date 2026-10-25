@@ -24,9 +24,17 @@ profile.cov
 go.work
 go.work.sum
 
-# env file
+# env files (.env.example is the committed template)
 .env
+.env.*
+!.env.example
 
 # Editor/IDE
 .idea/
 # .vscode/
+
+# Terraform (the .terraform.lock.hcl files are committed)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan

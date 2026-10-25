@@ -1,11 +1,31 @@
 name: Quality Control Checks
 
-on: push
+on:
+  push:
+    branches: [main]
+  # The deploy workflow runs these first.
+  workflow_call:
+
+concurrency:
+  group: checks-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
 
 jobs:
   tests:
     runs-on: ubuntu-latest
     name: Tests
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: recipes
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d recipes"
+          --health-interval 2s --health-timeout 3s --health-retries 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -13,10 +33,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
+          go-version-file: go.mod
           cache: true
 
-      - name: Run tests
-        run: go test ./...
+      - name: Run tests, including the ones against Postgres
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/recipes?sslmode=disable
+        run: go test -count=1 ./...
 
   lint:
     runs-on: ubuntu-latest
@@ -25,5 +48,60 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.15.0
+
+  terraform:
+    runs-on: ubuntu-latest
+    name: Terraform
+    defaults:
+      run:
+        working-directory: deploy/terraform
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Check formatting
+        run: terraform fmt -recursive -check -diff
+
+      - name: Validate each environment
+        run: |
+          for env in shared prod; do
+            echo "::group::$env"
+            terraform -chdir=environments/$env init -backend=false -input=false
+            terraform -chdir=environments/$env validate
+            echo "::endgroup::"
+          done
+
+      - name: Set up TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Run TFLint
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          tflint --init --config "$PWD/.tflint.hcl"
+          tflint --recursive --config "$PWD/.tflint.hcl"
+
+  docker:
+    runs-on: ubuntu-latest
+    name: Docker build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false

@@ -1,50 +1,77 @@
+basePath: /v1
 definitions:
-  controller.createRecipeRequest:
+  api.createRecipeRequest:
     properties:
+      id:
+        description: ID is optional; the app sends the one it created, possibly while
+          offline.
+        maxLength: 64
+        type: string
       name:
         type: string
     required:
     - name
     type: object
-  controller.recipeDTO:
+  api.recipeDTO:
     properties:
       id:
-        type: integer
+        type: string
       name:
         type: string
     type: object
 info:
   contact: {}
-  description: Simple recipes service with CRUD endpoints.
-  title: Recipes API
+  description: Recipes, grocery items and the grocery list for the MamieNellie app.
+  title: MamieNellie API
   version: "1.0"
 paths:
   /recipes:
     get:
+      parameters:
+      - description: Owner of the data
+        in: header
+        name: X-Device-Id
+        required: true
+        type: string
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/controller.recipeDTO'
+              $ref: '#/definitions/api.recipeDTO'
             type: array
       summary: List recipes
       tags:
       - recipes
     post:
       parameters:
+      - description: Owner of the data
+        in: header
+        name: X-Device-Id
+        required: true
+        type: string
       - description: Create recipe payload
         in: body
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/controller.createRecipeRequest'
+          $ref: '#/definitions/api.createRecipeRequest'
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/controller.recipeDTO'
-      summary: Create a new recipe
+            $ref: '#/definitions/api.recipeDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a recipe
       tags:
       - recipes
 swagger: "2.0"

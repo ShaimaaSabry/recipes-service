@@ -1,39 +1,64 @@
-# Recipes
+# MamieNellie service
 
-A simple app that can be used to learn the basics of Go, Gin, and GORM.
-
-Swagger: http://localhost:8080/swagger/index.html
+The backend for the MamieNellie recipes app: recipes, grocery items, units, categories and the
+grocery list.
 
 ## Technologies
 
-- Go
-- Gin
-- GORM
-- Docker Compose
+- Go, Gin, GORM, Postgres
+- goose for versioned SQL migrations (applied at startup)
+- Docker Compose for local development
 
-## Run Locally
+## Layout
 
-1. Install Go dependencies:
-     ```bash
-     go mod tidy  
-     ```
+A modular monolith. Each module under `internal/` has four layers, and depends inwards only:
 
-2. Run the Go application:
-     ```bash
-     go run cmd/main.go 
-     ```
+```
+cmd/main.go                 wiring only
+internal/
+  platform/                 config, database, HTTP server: shared plumbing, no business rules
+  shared/                   the small shared kernel: error kinds, the owner of the data
+  auth/                     (not started)
+  recipes/
+    module.go               the only package other code uses
+    entrypoint/api/         HTTP controllers and request/response types
+    application/<usecase>/  one package per use case; each declares the repository it needs
+    domain/model/           entities and business rules, no framework imports
+    infrastructure/         Postgres repositories and migrations
+```
 
-## Tests & Linting
+Every request carries an `X-Device-Id` header saying whose data it is, until the auth module
+replaces it with an account.
 
-* Linting:
-    ```
-    golangci-lint run --fix
-    ```
+## Environments
 
-* Unit tests:
-    ```
-    go test -cover ./...
-    ```
+The same build runs everywhere; only environment variables differ (see `.env.example`).
+
+| | local | prod (AWS, later) |
+|---|---|---|
+| `APP_ENV` | `local` | `prod` |
+| `DATABASE_URL` | Postgres in Docker Compose | RDS |
+| Logs | text, with SQL | JSON |
+| Swagger UI | http://localhost:8080/swagger/index.html | off |
+
+Prod runs on AWS ECS Fargate; see [deploy/README.md](deploy/README.md) for the Terraform, the deploy
+workflow, the `mamie-nellie` cost tags and the setup steps.
+
+## Run locally
+
+```bash
+cp .env.example .env.local   # once
+make run                     # starts Postgres in Docker, then the server on :8080
+```
+
+## Tests & linting
+
+```bash
+make test               # unit tests; database tests skip themselves
+make test-integration   # everything, against Postgres in Docker
+make lint
+make swag               # regenerate docs/ after changing API annotations
+```
 
 ## Authors & Copyrights
 
