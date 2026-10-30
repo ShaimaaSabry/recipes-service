@@ -4,11 +4,17 @@ Terraform for running the service on AWS (us-east-1), laid out like shomoa-clini
 
 ```
 deploy/terraform/
-  modules/        networking, ecr, rds, ecs, s3, acm
+  modules/        ecr, ecs, s3, acm
   environments/
-    shared/       VPC, ECR, RDS (+ its DATABASE_URL secret), GitHub deploy role, resource group, budget
-    prod/         ECS Fargate Spot service + ALB, photos bucket + CloudFront, HTTPS cert + DNS (once a domain is set)
+    shared/       ECR, GitHub deploy role, resource group, budget
+    prod/         ECS Fargate Spot service, DATABASE_URL secret, photos bucket + CloudFront, HTTPS cert + DNS
 ```
+
+The VPC, the ALB and the Postgres instance are shared with shomoa-clinics and data-magic, and owned
+by shomoa-clinics-service's Terraform (`shomoa-clinics-vpc`, `shared-alb`, `shomoa-clinics-db`).
+Prod looks them up by name and adds only its own pieces: a host-header rule (priority 200) and its
+certificate on the ALB's HTTPS listener, a target group and the tasks' security group. Changes to
+the shared resources themselves are made in shomoa-clinics-service.
 
 Local development doesn't use any of this; it runs on Docker Compose (see the main README).
 
@@ -42,12 +48,12 @@ under "No tag key".
 
 | | |
 |---|---|
-| ALB | ~$17 |
-| RDS db.t4g.micro + 20 GB gp3 | ~$14 |
-| Public IPv4 addresses (ALB ×2, task ×1) | ~$11 |
+| Public IPv4 address (task ×1) | ~$4 |
 | Fargate Spot, 0.25 vCPU / 0.5 GB, one task | ~$3 |
 | Secrets Manager, CloudWatch Logs, ECR, S3, CloudFront | ~$2 |
-| **Total** | **~$45–50** |
+| **Total** | **~$9** |
+
+The ALB and the database are shared, so they're billed under `shomoa-clinics`.
 
 ## First-time setup
 
@@ -62,30 +68,36 @@ under "No tag key".
    Also add the sensitive environment variables `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
    and `AWS_DEFAULT_REGION=us-east-1`.
 2. **Push to main.** Every push that changes `deploy/terraform/` starts the runs by itself. Shared
-   must be applied before prod, which looks shared's resources up: the first time, confirm (or let
+   must be applied before prod, which looks shared's resources up (and the shared VPC and ALB
+   must exist in shomoa-clinics-service): the first time, confirm (or let
    auto apply finish) the shared run, then start a new run in the prod workspace and confirm it.
 3. **GitHub secret:** set shared's `github_actions_role_arn` output as `AWS_DEPLOY_ROLE_ARN` in
    this repo.
-4. **Prod's single task can't start until an image exists**, so ECS keeps retrying until the next step.
-5. **First deploy:** Actions → Deploy to Prod. It pushes the image and starts the service.
-6. **GitHub environment** `prod` (Settings → Environments): add yourself as a required reviewer if
+4. **Database:** on the shared Postgres instance, create the `mamie_nellie` database and its own
+   user (not the master user), then set the `mamie-nellie-database` secret's value to
+   `{"DATABASE_URL": "postgres://<user>:<url-encoded password>@<host>:5432/mamie_nellie?sslmode=require"}`.
+   Terraform creates the secret empty and never touches its value.
+5. **Prod's single task can't start until an image exists**, so ECS keeps retrying until the next step.
+6. **First deploy:** Actions → Deploy to Prod. It pushes the image and starts the service.
+7. **GitHub environment** `prod` (Settings → Environments): add yourself as a required reviewer if
    you want to approve each deploy.
 
 From then on, deploy with Actions → **Deploy to Prod**: checks → build → scan → deploy → health check.
 If a new version keeps failing its health check, ECS rolls back to the previous one by itself.
 
-## Domain (needed before the app uses prod)
+## Domain
 
-Until `domain_name` and `hosted_zone_id` are set in `environments/prod/terraform.tfvars`, the ALB
-serves plain HTTP on its AWS hostname (the `api_url` output). The app's Android build blocks
-cleartext HTTP, so buy or pick a domain, put its Route 53 hosted zone ID there and apply prod: that
-adds the HTTPS certificate, redirects HTTP to HTTPS and points `api.<domain>` at the ALB.
+The API is served at `https://api.mamienellie.com`. The domain is registered in Route 53 in this
+account, and prod's `terraform.tfvars` names its hosted zone. Applying prod issues the HTTPS
+certificate (validated by DNS in that zone), redirects HTTP to HTTPS and points
+`api.mamienellie.com` at the shared ALB, which routes that hostname to this service. The app's Android build blocks plain HTTP, so it must use the
+HTTPS name, not the ALB's own hostname.
 
 ## Database access
 
-The database is private. To connect from pgAdmin, set `admin_cidr_blocks = ["<your IP>/32"]` in
-`environments/shared/terraform.tfvars` and apply shared; the credentials are in the
-`mamie-nellie-database` secret. The instance has deletion protection and keeps a final snapshot.
+The database lives on the shared instance `shomoa-clinics-db`. Who may connect to it directly
+(`admin_cidr_blocks`) is set in shomoa-clinics-service's Terraform; the service's own connection
+string is in the `mamie-nellie-database` secret.
 
 ## Checks
 

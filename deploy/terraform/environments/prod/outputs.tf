@@ -1,6 +1,11 @@
 output "api_url" {
   description = "Base URL of the API, for the app's prod EXPO_PUBLIC_API_URL."
-  value       = local.has_domain ? "https://${var.domain_name}" : "http://${module.ecs.alb_dns_name}"
+  value       = "https://${var.domain_name}"
+}
+
+output "database_secret_name" {
+  description = "Secret to set DATABASE_URL in by hand."
+  value       = aws_secretsmanager_secret.database.name
 }
 
 output "cluster_name" {

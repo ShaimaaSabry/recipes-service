@@ -27,13 +27,3 @@ output "task_role_arn" {
   description = "ARN of the task role."
   value       = aws_iam_role.task.arn
 }
-
-output "alb_dns_name" {
-  description = "DNS name of the ALB."
-  value       = aws_lb.this.dns_name
-}
-
-output "alb_zone_id" {
-  description = "Hosted zone ID of the ALB, for a Route 53 alias record."
-  value       = aws_lb.this.zone_id
-}

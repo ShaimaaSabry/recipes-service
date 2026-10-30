@@ -19,18 +19,8 @@ locals {
 
 data "aws_caller_identity" "current" {}
 
-# ---------------------------------------------------------------------------
-# Networking: VPC, public subnets (ALB + ECS) and private subnets (RDS)
-# ---------------------------------------------------------------------------
-module "networking" {
-  source = "../../modules/networking"
-
-  project              = var.project
-  vpc_cidr             = var.vpc_cidr
-  public_subnet_cidrs  = var.public_subnet_cidrs
-  private_subnet_cidrs = var.private_subnet_cidrs
-  availability_zones   = var.availability_zones
-}
+# The VPC, ALB and Postgres instance are shared with the other projects and
+# owned by shomoa-clinics-service's Terraform; prod looks them up by name.
 
 # ---------------------------------------------------------------------------
 # ECR: one repository; images are tagged with the git SHA by GitHub Actions
@@ -39,29 +29,6 @@ module "ecr" {
   source = "../../modules/ecr"
 
   project = var.project
-}
-
-# ---------------------------------------------------------------------------
-# RDS: PostgreSQL 16 for prod. It lives here, not in prod, so tearing down and
-# recreating the app never touches the data.
-# ---------------------------------------------------------------------------
-module "rds" {
-  source = "../../modules/rds"
-
-  project    = var.project
-  vpc_id     = module.networking.vpc_id
-  vpc_cidr   = module.networking.vpc_cidr
-  subnet_ids = module.networking.private_subnet_ids
-
-  db_identifier        = "${var.project}-db"
-  db_name              = var.db_name
-  db_username          = var.db_username
-  db_instance_class    = var.db_instance_class
-  db_allocated_storage = var.db_allocated_storage
-
-  deletion_protection     = true
-  backup_retention_period = var.backup_retention_period
-  admin_cidr_blocks       = var.admin_cidr_blocks
 }
 
 # ---------------------------------------------------------------------------

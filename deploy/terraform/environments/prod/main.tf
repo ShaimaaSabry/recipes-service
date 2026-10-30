@@ -14,15 +14,15 @@ locals {
     ManagedBy   = "terraform"
     Repository  = var.github_repository
   }
-  has_domain = var.domain_name != ""
 }
 
 # ---------------------------------------------------------------------------
-# What environments/shared created, looked up by name and tag, so nothing has
-# to be copied from its outputs by hand.
+# Infrastructure shared with the other projects, owned by shomoa-clinics-service's
+# Terraform and looked up here by name and tag: the VPC, the ALB and the
+# Postgres instance (reached through the DATABASE_URL in the secret below).
 # ---------------------------------------------------------------------------
 data "aws_vpc" "shared" {
-  tags = { Project = var.project, Name = "${var.project}-vpc" }
+  tags = { Name = var.shared_vpc_name }
 }
 
 data "aws_subnets" "public" {
@@ -33,12 +33,30 @@ data "aws_subnets" "public" {
   tags = { Tier = "public" }
 }
 
+data "aws_lb" "shared" {
+  name = var.shared_alb_name
+}
+
+data "aws_lb_listener" "shared_https" {
+  load_balancer_arn = data.aws_lb.shared.arn
+  port              = 443
+}
+
+# environments/shared of this repo.
 data "aws_ecr_repository" "service" {
   name = var.project
 }
 
-data "aws_secretsmanager_secret" "database" {
-  name = "${var.project}-database"
+# ---------------------------------------------------------------------------
+# Database connection. The database and its user are created by hand on the
+# shared instance; Terraform only creates the secret, and its value is set by
+# hand too, as {"DATABASE_URL": "postgres://...?sslmode=require"}. Terraform
+# never reads or overwrites it. The service can't start until it's set.
+# ---------------------------------------------------------------------------
+resource "aws_secretsmanager_secret" "database" {
+  name                    = "${var.project}-database"
+  description             = "DATABASE_URL for ${var.project}. Created by Terraform; value set by hand."
+  recovery_window_in_days = 0
 }
 
 # ---------------------------------------------------------------------------
@@ -52,18 +70,17 @@ module "s3" {
 }
 
 # ---------------------------------------------------------------------------
-# HTTPS certificate and DNS name, once a domain is set in terraform.tfvars.
+# HTTPS certificate for the API's hostname, added to the shared ALB's listener.
 # ---------------------------------------------------------------------------
 module "acm" {
   source = "../../modules/acm"
-  count  = local.has_domain ? 1 : 0
 
   domain_name    = var.domain_name
   hosted_zone_id = var.hosted_zone_id
 }
 
 # ---------------------------------------------------------------------------
-# ECS Fargate Spot service behind an ALB
+# ECS Fargate Spot service behind the shared ALB
 # ---------------------------------------------------------------------------
 module "ecs" {
   source = "../../modules/ecs"
@@ -77,26 +94,28 @@ module "ecs" {
   vpc_id            = data.aws_vpc.shared.id
   public_subnet_ids = data.aws_subnets.public.ids
 
-  database_secret_arn = data.aws_secretsmanager_secret.database.arn
+  https_listener_arn     = data.aws_lb_listener.shared_https.arn
+  alb_security_group_id  = tolist(data.aws_lb.shared.security_groups)[0]
+  host_header            = var.domain_name
+  listener_rule_priority = var.listener_rule_priority
+  certificate_arn        = module.acm.certificate_arn
+
+  database_secret_arn = aws_secretsmanager_secret.database.arn
   photos_bucket_name  = module.s3.bucket_name
   photos_url          = module.s3.photos_url
-
-  certificate_arn = local.has_domain ? module.acm[0].certificate_arn : null
 
   cpu    = var.cpu
   memory = var.memory
 }
 
 resource "aws_route53_record" "api" {
-  count = local.has_domain ? 1 : 0
-
   zone_id = var.hosted_zone_id
   name    = var.domain_name
   type    = "A"
 
   alias {
-    name                   = module.ecs.alb_dns_name
-    zone_id                = module.ecs.alb_zone_id
+    name                   = data.aws_lb.shared.dns_name
+    zone_id                = data.aws_lb.shared.zone_id
     evaluate_target_health = true
   }
 }

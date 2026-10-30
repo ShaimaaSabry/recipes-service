@@ -20,12 +20,12 @@ variable "image_tag" {
 }
 
 variable "vpc_id" {
-  description = "VPC for the ALB and tasks."
+  description = "VPC the tasks run in."
   type        = string
 }
 
 variable "public_subnet_ids" {
-  description = "Public subnets for the ALB and tasks (tasks get public IPs; no NAT Gateway)."
+  description = "Public subnets for the tasks (they get public IPs; no NAT Gateway)."
   type        = list(string)
 }
 
@@ -44,10 +44,29 @@ variable "photos_url" {
   type        = string
 }
 
-variable "certificate_arn" {
-  description = "Validated ACM certificate for HTTPS. Null serves plain HTTP (only until a domain is set up)."
+variable "https_listener_arn" {
+  description = "HTTPS listener of the shared ALB this service is routed through."
   type        = string
-  default     = null
+}
+
+variable "alb_security_group_id" {
+  description = "Security group of the shared ALB, allowed to reach the tasks."
+  type        = string
+}
+
+variable "host_header" {
+  description = "Hostname the shared ALB routes to this service (e.g. api.mamienellie.com)."
+  type        = string
+}
+
+variable "listener_rule_priority" {
+  description = "Priority of this service's rule on the shared HTTPS listener; unique on that listener."
+  type        = number
+}
+
+variable "certificate_arn" {
+  description = "Validated ACM certificate for host_header, added to the shared HTTPS listener."
+  type        = string
 }
 
 variable "container_port" {

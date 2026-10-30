@@ -1,6 +1,5 @@
 locals {
   name   = "${var.project}-${var.environment}"
-  https  = var.certificate_arn != null
   region = data.aws_region.current.region
 }
 
@@ -88,45 +87,8 @@ resource "aws_iam_role_policy" "task" {
 }
 
 # ---------------------------------------------------------------------------
-# Security groups: the internet reaches the ALB; only the ALB reaches tasks.
+# Tasks' security group: only the shared ALB reaches them.
 # ---------------------------------------------------------------------------
-resource "aws_security_group" "alb" {
-  name_prefix = "${local.name}-alb-sg-"
-  description = "Inbound HTTP/HTTPS from the internet for the ${local.name} ALB"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    description = "HTTP from the internet"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "HTTPS from the internet"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = merge(var.tags, { Name = "${local.name}-alb-sg" })
-
-  # description is immutable, and the old group can't go while the ALB uses it.
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
 resource "aws_security_group" "tasks" {
   name        = "${local.name}-ecs-tasks-sg"
   description = "Inbound ${var.container_port} from the ALB only for ${local.name} tasks"
@@ -137,7 +99,7 @@ resource "aws_security_group" "tasks" {
     from_port       = var.container_port
     to_port         = var.container_port
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
+    security_groups = [var.alb_security_group_id]
   }
 
   egress {
@@ -152,18 +114,9 @@ resource "aws_security_group" "tasks" {
 }
 
 # ---------------------------------------------------------------------------
-# Application Load Balancer
+# Routing on the shared ALB: requests for host_header go to this target group.
+# The ALB's HTTP listener already redirects every host to HTTPS.
 # ---------------------------------------------------------------------------
-resource "aws_lb" "this" {
-  name               = "${local.name}-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = var.public_subnet_ids
-
-  tags = merge(var.tags, { Name = "${local.name}-alb" })
-}
-
 resource "aws_lb_target_group" "this" {
   name_prefix = "mn-tg-"
   port        = var.container_port
@@ -189,46 +142,29 @@ resource "aws_lb_target_group" "this" {
   }
 }
 
-# With a certificate, HTTP redirects to HTTPS. Without one (no domain yet), HTTP
-# serves the app directly; the app's prod build needs HTTPS, so set a domain
-# before using it for real.
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.this.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = local.https ? "redirect" : "forward"
-    target_group_arn = local.https ? null : aws_lb_target_group.this.arn
-
-    dynamic "redirect" {
-      for_each = local.https ? [1] : []
-      content {
-        port        = "443"
-        protocol    = "HTTPS"
-        status_code = "HTTP_301"
-      }
-    }
-  }
-
-  tags = var.tags
+resource "aws_lb_listener_certificate" "this" {
+  listener_arn    = var.https_listener_arn
+  certificate_arn = var.certificate_arn
 }
 
-resource "aws_lb_listener" "https" {
-  count = local.https ? 1 : 0
+resource "aws_lb_listener_rule" "this" {
+  listener_arn = var.https_listener_arn
+  priority     = var.listener_rule_priority
 
-  load_balancer_arn = aws_lb.this.arn
-  port              = 443
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = var.certificate_arn
-
-  default_action {
+  action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.this.arn
   }
 
-  tags = var.tags
+  condition {
+    host_header {
+      values = [var.host_header]
+    }
+  }
+
+  tags = merge(var.tags, { Name = "${local.name}-rule" })
+
+  depends_on = [aws_lb_listener_certificate.this]
 }
 
 # ---------------------------------------------------------------------------
@@ -349,5 +285,5 @@ resource "aws_ecs_service" "this" {
 
   tags = merge(var.tags, { Name = "${local.name}-service" })
 
-  depends_on = [aws_lb_listener.http, aws_lb_listener.https]
+  depends_on = [aws_lb_listener_rule.this]
 }

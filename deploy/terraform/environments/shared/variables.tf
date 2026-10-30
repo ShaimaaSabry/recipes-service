@@ -21,57 +21,6 @@ variable "github_repository" {
   type        = string
 }
 
-variable "vpc_cidr" {
-  description = "CIDR block for the VPC."
-  type        = string
-}
-
-variable "public_subnet_cidrs" {
-  description = "CIDR blocks for the public subnets."
-  type        = list(string)
-}
-
-variable "private_subnet_cidrs" {
-  description = "CIDR blocks for the private subnets."
-  type        = list(string)
-}
-
-variable "availability_zones" {
-  description = "Availability zones for the subnets."
-  type        = list(string)
-}
-
-variable "db_name" {
-  description = "Database the service uses."
-  type        = string
-}
-
-variable "db_username" {
-  description = "RDS master username."
-  type        = string
-}
-
-variable "db_instance_class" {
-  description = "RDS instance class."
-  type        = string
-}
-
-variable "db_allocated_storage" {
-  description = "RDS storage in GiB."
-  type        = number
-}
-
-variable "backup_retention_period" {
-  description = "Days of automated RDS backups to keep."
-  type        = number
-}
-
-variable "admin_cidr_blocks" {
-  description = "CIDRs allowed to connect to RDS directly (e.g. your home IP as x.x.x.x/32). Empty keeps it private."
-  type        = list(string)
-  default     = []
-}
-
 variable "monthly_budget_usd" {
   description = "Monthly budget for everything tagged with the project."
   type        = number

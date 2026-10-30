@@ -1,8 +1,7 @@
-data "aws_caller_identity" "current" {}
-
 locals {
-  # Bucket names are global across all AWS accounts; the account ID keeps it free.
-  bucket_name = "${var.project}-photos-${var.environment}-${data.aws_caller_identity.current.account_id}"
+  # Bucket names are global across all AWS accounts: if this one is taken, the
+  # apply fails with BucketAlreadyExists.
+  bucket_name = "${var.project}-${var.environment}"
 }
 
 # ---------------------------------------------------------------------------

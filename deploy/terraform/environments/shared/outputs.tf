@@ -1,26 +1,6 @@
-output "vpc_id" {
-  description = "ID of the VPC."
-  value       = module.networking.vpc_id
-}
-
-output "public_subnet_ids" {
-  description = "Public subnet IDs."
-  value       = module.networking.public_subnet_ids
-}
-
 output "ecr_repository_url" {
   description = "ECR repository URL."
   value       = module.ecr.repository_url
-}
-
-output "db_instance_address" {
-  description = "RDS hostname."
-  value       = module.rds.db_instance_address
-}
-
-output "database_secret_name" {
-  description = "Secret holding DATABASE_URL."
-  value       = module.rds.database_secret_name
 }
 
 output "github_actions_role_arn" {

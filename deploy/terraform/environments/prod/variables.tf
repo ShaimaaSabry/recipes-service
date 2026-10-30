@@ -38,18 +38,26 @@ variable "memory" {
 }
 
 variable "domain_name" {
-  description = "API hostname (e.g. api.mamienellie.com). Empty serves plain HTTP on the ALB's own name."
+  description = "API hostname (e.g. api.mamienellie.com), routed to this service on the shared ALB."
   type        = string
-  default     = ""
 }
 
 variable "hosted_zone_id" {
-  description = "Route 53 hosted zone of the domain. Required when domain_name is set."
+  description = "Route 53 hosted zone of the domain."
   type        = string
-  default     = ""
+}
 
-  validation {
-    condition     = var.domain_name == "" || var.hosted_zone_id != ""
-    error_message = "hosted_zone_id is required when domain_name is set."
-  }
+variable "shared_vpc_name" {
+  description = "Name tag of the shared VPC (owned by shomoa-clinics-service)."
+  type        = string
+}
+
+variable "shared_alb_name" {
+  description = "Name of the shared ALB (owned by shomoa-clinics-service)."
+  type        = string
+}
+
+variable "listener_rule_priority" {
+  description = "Priority of this service's rule on the shared HTTPS listener. Unique on that listener."
+  type        = number
 }
