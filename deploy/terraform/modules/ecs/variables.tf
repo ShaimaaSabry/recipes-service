@@ -34,6 +34,21 @@ variable "database_secret_arn" {
   type        = string
 }
 
+variable "auth_secret_arn" {
+  description = "Secrets Manager secret whose JWT_SIGNING_KEY key is injected into the container."
+  type        = string
+}
+
+variable "apple_client_ids" {
+  description = "Bundle IDs Sign in with Apple tokens must be issued for."
+  type        = list(string)
+}
+
+variable "google_client_ids" {
+  description = "Google OAuth client IDs (iOS, Android, web) Google Sign-In tokens must be issued for."
+  type        = list(string)
+}
+
 variable "photos_bucket_name" {
   description = "S3 bucket for recipe photos."
   type        = string

@@ -53,6 +53,25 @@ func TestRecipeSqlRepository(t *testing.T) {
 		require.NoError(t, repo.CreateRecipe(ctx, model.Of("item-garlic", "device-2", "Soup")))
 	})
 
+	t.Run("deletes an owner's data and no one else's", func(t *testing.T) {
+		repo := newRepository(t)
+		require.NoError(t, repo.CreateRecipe(ctx, model.Of("r-1", "device-1", "Soup")))
+		require.NoError(t, repo.CreateRecipe(ctx, model.Of("r-2", "device-2", "Not mine")))
+
+		require.NoError(t, repo.DeleteOwnerData(ctx, "device-1"))
+
+		mine, err := repo.GetRecipes(ctx, "device-1")
+		require.NoError(t, err)
+		require.Empty(t, mine)
+		theirs, err := repo.GetRecipes(ctx, "device-2")
+		require.NoError(t, err)
+		require.Len(t, theirs, 1)
+	})
+
+	t.Run("deleting an owner with no data succeeds", func(t *testing.T) {
+		require.NoError(t, newRepository(t).DeleteOwnerData(ctx, "nobody"))
+	})
+
 	t.Run("migrating twice changes nothing", func(t *testing.T) {
 		db := databasetest.New(t)
 		require.NoError(t, database.Migrate(ctx, db, "recipes", Migrations()))

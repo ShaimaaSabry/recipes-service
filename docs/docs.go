@@ -15,21 +15,262 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/apple": {
+            "post": {
+                "description": "Creates the account on the first sign-in. Send the name Apple shows on that first sign-in; Apple never repeats it.",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Sign in with Apple",
+                "parameters": [
+                    {
+                        "description": "Apple identity token",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.appleSignInRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.signInResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/dev": {
+            "post": {
+                "description": "Only exists when running locally, for trying the API from Swagger. The same name signs into the same test account.",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Sign in without Apple or Google (local only)",
+                "parameters": [
+                    {
+                        "description": "Test account name",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.devSignInRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.signInResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/google": {
+            "post": {
+                "description": "Creates the account on the first sign-in.",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Sign in with Google",
+                "parameters": [
+                    {
+                        "description": "Google ID token",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.googleSignInRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.signInResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Trades a refresh token for a new access token and a new refresh token. Each refresh token works once; keep the new one.",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get new tokens",
+                "parameters": [
+                    {
+                        "description": "Refresh token",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.refreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.tokensDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/sign-out": {
+            "post": {
+                "description": "Ends the session the refresh token belongs to. Succeeds for an already-ended session too.",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Sign out",
+                "parameters": [
+                    {
+                        "description": "Refresh token",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.refreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "account"
+                ],
+                "summary": "The signed-in account",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.userDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes the account and everything saved with it, and ends all its sessions. It can't be undone.",
+                "tags": [
+                    "account"
+                ],
+                "summary": "Delete the account",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/recipes": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "tags": [
                     "recipes"
                 ],
                 "summary": "List recipes",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Owner of the data",
-                        "name": "X-Device-Id",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -39,22 +280,27 @@ const docTemplate = `{
                                 "$ref": "#/definitions/api.recipeDTO"
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "tags": [
                     "recipes"
                 ],
                 "summary": "Create a recipe",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Owner of the data",
-                        "name": "X-Device-Id",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "description": "Create recipe payload",
                         "name": "payload",
@@ -79,6 +325,13 @@ const docTemplate = `{
                             "additionalProperties": true
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
                     "409": {
                         "description": "Conflict",
                         "schema": {
@@ -91,6 +344,23 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.appleSignInRequest": {
+            "type": "object",
+            "required": [
+                "idToken"
+            ],
+            "properties": {
+                "idToken": {
+                    "description": "IDToken is the identityToken from Sign in with Apple.",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is the full name Apple shows the app on the first sign-in only. Optional.",
+                    "type": "string",
+                    "maxLength": 200
+                }
+            }
+        },
         "api.createRecipeRequest": {
             "type": "object",
             "required": [
@@ -107,6 +377,31 @@ const docTemplate = `{
                 }
             }
         },
+        "api.devSignInRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "description": "Name picks the local test account; the same name signs into the same account.",
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "api.googleSignInRequest": {
+            "type": "object",
+            "required": [
+                "idToken"
+            ],
+            "properties": {
+                "idToken": {
+                    "description": "IDToken is the idToken from Google Sign-In.",
+                    "type": "string"
+                }
+            }
+        },
         "api.recipeDTO": {
             "type": "object",
             "properties": {
@@ -117,6 +412,80 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "api.refreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "refreshToken"
+            ],
+            "properties": {
+                "refreshToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.signInResponse": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "accessTokenExpiresAt": {
+                    "type": "string"
+                },
+                "newAccount": {
+                    "description": "NewAccount is true when this sign-in created the account, e.g. to show onboarding.",
+                    "type": "boolean"
+                },
+                "refreshToken": {
+                    "type": "string"
+                },
+                "refreshTokenExpiresAt": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/api.userDTO"
+                }
+            }
+        },
+        "api.tokensDTO": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "accessTokenExpiresAt": {
+                    "type": "string"
+                },
+                "refreshToken": {
+                    "type": "string"
+                },
+                "refreshTokenExpiresAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.userDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "\"Bearer \" followed by the accessToken from signing in.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
@@ -128,7 +497,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/v1",
 	Schemes:          []string{},
 	Title:            "MamieNellie API",
-	Description:      "Recipes, grocery items and the grocery list for the MamieNellie app.",
+	Description:      "Recipes, grocery items and the grocery list for the MamieNellie app.\nSign in (locally: POST /auth/dev), then click Authorize and enter \"Bearer <accessToken>\".",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

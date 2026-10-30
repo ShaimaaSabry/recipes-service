@@ -7,7 +7,7 @@ deploy/terraform/
   modules/        ecr, ecs, s3, acm
   environments/
     shared/       ECR, GitHub deploy role, resource group, budget
-    prod/         ECS Fargate Spot service, DATABASE_URL secret, photos bucket + CloudFront, HTTPS cert + DNS
+    prod/         ECS Fargate Spot service, DATABASE_URL and auth secrets, photos bucket + CloudFront, HTTPS cert + DNS
 ```
 
 The VPC, the ALB and the Postgres instance are shared with shomoa-clinics and data-magic, and owned
@@ -77,6 +77,10 @@ The ALB and the database are shared, so they're billed under `shomoa-clinics`.
    user (not the master user), then set the `mamie-nellie-database` secret's value to
    `{"DATABASE_URL": "postgres://<user>:<url-encoded password>@<host>:5432/mamie_nellie?sslmode=require"}`.
    Terraform creates the secret empty and never touches its value.
+   Do the same for `mamie-nellie-auth`: `{"JWT_SIGNING_KEY": "<openssl rand -base64 48>"}`. Changing it
+   later only signs everyone out.
+   Also set `apple_client_ids` and `google_client_ids` in `environments/prod/terraform.tfvars`: the
+   service refuses to start in prod without them.
 5. **Prod's single task can't start until an image exists**, so ECS keeps retrying until the next step.
 6. **First deploy:** Actions → Deploy to Prod. It pushes the image and starts the service.
 7. **GitHub environment** `prod` (Settings → Environments): add yourself as a required reviewer if

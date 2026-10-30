@@ -13,17 +13,20 @@ import (
 	"github.com/mamienellie/recipes-service/internal/recipes/application/getrecipes"
 	"github.com/mamienellie/recipes-service/internal/recipes/entrypoint/api"
 	"github.com/mamienellie/recipes-service/internal/recipes/infrastructure/repository/sql"
+	"github.com/mamienellie/recipes-service/internal/shared/owner"
 )
 
 type Module struct {
 	db         *gorm.DB
+	repository *sql.RecipeSqlRepository
 	controller *api.RecipeController
 }
 
 func New(db *gorm.DB) *Module {
 	recipeRepository := sql.NewRecipeSqlRepository(db)
 	return &Module{
-		db: db,
+		db:         db,
+		repository: recipeRepository,
 		controller: api.NewRecipeController(
 			getrecipes.NewInteractor(recipeRepository),
 			createrecipe.NewInteractor(recipeRepository),
@@ -34,6 +37,11 @@ func New(db *gorm.DB) *Module {
 // Migrate brings the module's tables up to date.
 func (m *Module) Migrate(ctx context.Context) error {
 	return database.Migrate(ctx, m.db, "recipes", sql.Migrations())
+}
+
+// DeleteOwnerData deletes everything the module stores for owner, when the account is deleted.
+func (m *Module) DeleteOwnerData(ctx context.Context, owner owner.ID) error {
+	return m.repository.DeleteOwnerData(ctx, owner)
 }
 
 // RegisterRoutes adds the module's routes to r, which must sit behind httpserver.RequireOwner.

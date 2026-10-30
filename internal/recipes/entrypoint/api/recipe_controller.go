@@ -45,8 +45,9 @@ func (h *RecipeController) RegisterRoutes(r gin.IRouter) {
 // GetRecipes godoc
 // @Summary     List recipes
 // @Tags        recipes
-// @Param       X-Device-Id header string true "Owner of the data"
+// @Security    BearerAuth
 // @Success     200 {array}  recipeDTO
+// @Failure     401 {object} map[string]any
 // @Router      /recipes [get]
 func (h *RecipeController) GetRecipes(ctx *gin.Context) {
 	recipes, err := h.getRecipesInteractor.Execute(ctx.Request.Context(), getrecipes.Query{Owner: httpserver.OwnerOf(ctx)})
@@ -65,10 +66,11 @@ func (h *RecipeController) GetRecipes(ctx *gin.Context) {
 // CreateRecipe godoc
 // @Summary     Create a recipe
 // @Tags        recipes
-// @Param       X-Device-Id header string true "Owner of the data"
+// @Security    BearerAuth
 // @Param       payload body createRecipeRequest true "Create recipe payload"
 // @Success     201 {object} recipeDTO
 // @Failure     400 {object} map[string]any
+// @Failure     401 {object} map[string]any
 // @Failure     409 {object} map[string]any
 // @Router      /recipes [post]
 func (h *RecipeController) CreateRecipe(ctx *gin.Context) {

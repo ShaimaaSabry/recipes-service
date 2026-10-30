@@ -37,6 +37,14 @@ func (r *RecipeSqlRepository) CreateRecipe(ctx context.Context, recipe *model.Re
 	return nil
 }
 
+// DeleteOwnerData deletes everything the module stores for owner, for account deletion.
+func (r *RecipeSqlRepository) DeleteOwnerData(ctx context.Context, owner owner.ID) error {
+	if err := r.db.WithContext(ctx).Where("owner_id = ?", string(owner)).Delete(&recipeDBO{}).Error; err != nil {
+		return fmt.Errorf("delete recipes: %w", err)
+	}
+	return nil
+}
+
 func (r *RecipeSqlRepository) GetRecipes(ctx context.Context, owner owner.ID) ([]model.Recipe, error) {
 	var dbos []recipeDBO
 	err := r.db.WithContext(ctx).Where("owner_id = ?", string(owner)).Order("name, id").Find(&dbos).Error

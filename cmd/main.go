@@ -13,6 +13,7 @@ import (
 
 	// Registers the generated OpenAPI spec for the Swagger UI.
 	_ "github.com/mamienellie/recipes-service/docs"
+	"github.com/mamienellie/recipes-service/internal/auth"
 	"github.com/mamienellie/recipes-service/internal/platform/config"
 	"github.com/mamienellie/recipes-service/internal/platform/database"
 	"github.com/mamienellie/recipes-service/internal/platform/httpserver"
@@ -22,7 +23,13 @@ import (
 // @title        MamieNellie API
 // @version      1.0
 // @description  Recipes, grocery items and the grocery list for the MamieNellie app.
+// @description  Sign in (locally: POST /auth/dev), then click Authorize and enter "Bearer <accessToken>".
 // @BasePath     /v1
+//
+// @securityDefinitions.apikey BearerAuth
+// @in                         header
+// @name                       Authorization
+// @description                "Bearer " followed by the accessToken from signing in.
 func main() {
 	if err := run(); err != nil {
 		slog.Error("server stopped", "error", err)
@@ -51,13 +58,28 @@ func run() error {
 		return err
 	}
 	recipesModule := recipes.New(db)
+	authModule, err := auth.New(ctx, db, auth.Settings{
+		SigningKey:      []byte(cfg.JWTSigningKey),
+		AppleClientIDs:  cfg.AppleClientIDs,
+		GoogleClientIDs: cfg.GoogleClientIDs,
+		AllowDevSignIn:  cfg.IsLocal(),
+	}, recipesModule.DeleteOwnerData)
+	if err != nil {
+		return err
+	}
+	if err := authModule.Migrate(ctx); err != nil {
+		return err
+	}
 	if err := recipesModule.Migrate(ctx); err != nil {
 		return err
 	}
 
 	r := httpserver.New(cfg.IsLocal())
-	v1 := r.Group("/v1", httpserver.RequireOwner())
-	recipesModule.RegisterRoutes(v1)
+	public := r.Group("/v1")
+	authModule.RegisterPublicRoutes(public)
+	signedIn := r.Group("/v1", httpserver.RequireOwner(authModule.Authenticate))
+	authModule.RegisterRoutes(signedIn)
+	recipesModule.RegisterRoutes(signedIn)
 	if cfg.IsLocal() {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}

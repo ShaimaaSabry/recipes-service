@@ -59,6 +59,15 @@ resource "aws_secretsmanager_secret" "database" {
   recovery_window_in_days = 0
 }
 
+# The key access tokens are signed with. Like the database secret, Terraform creates it empty and
+# its value is set by hand, as {"JWT_SIGNING_KEY": "<openssl rand -base64 48>"}. Changing the
+# key signs everyone out within 15 minutes (their access tokens stop verifying), nothing worse.
+resource "aws_secretsmanager_secret" "auth" {
+  name                    = "${var.project}-auth"
+  description             = "JWT_SIGNING_KEY for ${var.project}. Created by Terraform; value set by hand."
+  recovery_window_in_days = 0
+}
+
 # ---------------------------------------------------------------------------
 # Photos bucket + CloudFront
 # ---------------------------------------------------------------------------
@@ -101,6 +110,9 @@ module "ecs" {
   certificate_arn        = module.acm.certificate_arn
 
   database_secret_arn = aws_secretsmanager_secret.database.arn
+  auth_secret_arn     = aws_secretsmanager_secret.auth.arn
+  apple_client_ids    = var.apple_client_ids
+  google_client_ids   = var.google_client_ids
   photos_bucket_name  = module.s3.bucket_name
   photos_url          = module.s3.photos_url
 

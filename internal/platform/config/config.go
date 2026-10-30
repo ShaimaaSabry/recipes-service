@@ -17,11 +17,21 @@ const (
 	EnvProd  Env = "prod"
 )
 
+// MinSigningKeyLength is the shortest access token signing key accepted, in bytes.
+const MinSigningKeyLength = 32
+
 // Config is every setting the service needs.
 type Config struct {
 	Env         Env
 	Port        string
 	DatabaseURL string
+	// JWTSigningKey signs the access tokens the app sends with each request.
+	JWTSigningKey string
+	// AppleClientIDs are the app's bundle IDs that Sign in with Apple tokens must be issued for.
+	AppleClientIDs []string
+	// GoogleClientIDs are the app's Google OAuth client IDs (iOS, Android, web) that Google
+	// Sign-In tokens must be issued for.
+	GoogleClientIDs []string
 }
 
 // IsLocal reports whether the service is running on a developer's machine.
@@ -31,9 +41,12 @@ func (c Config) IsLocal() bool { return c.Env == EnvLocal }
 // invalid, so a misconfigured server stops at startup instead of on its first request.
 func Load(getenv func(string) string) (Config, error) {
 	cfg := Config{
-		Env:         Env(strings.TrimSpace(getenv("APP_ENV"))),
-		Port:        strings.TrimSpace(getenv("PORT")),
-		DatabaseURL: strings.TrimSpace(getenv("DATABASE_URL")),
+		Env:             Env(strings.TrimSpace(getenv("APP_ENV"))),
+		Port:            strings.TrimSpace(getenv("PORT")),
+		DatabaseURL:     strings.TrimSpace(getenv("DATABASE_URL")),
+		JWTSigningKey:   strings.TrimSpace(getenv("JWT_SIGNING_KEY")),
+		AppleClientIDs:  list(getenv("APPLE_CLIENT_IDS")),
+		GoogleClientIDs: list(getenv("GOOGLE_CLIENT_IDS")),
 	}
 	if cfg.Port == "" {
 		cfg.Port = "8080"
@@ -46,6 +59,16 @@ func Load(getenv func(string) string) (Config, error) {
 	if cfg.DatabaseURL == "" {
 		problems = append(problems, errors.New("DATABASE_URL is required"))
 	}
+	if len(cfg.JWTSigningKey) < MinSigningKeyLength {
+		problems = append(problems, fmt.Errorf("JWT_SIGNING_KEY must be at least %d characters", MinSigningKeyLength))
+	}
+	// Locally, POST /v1/auth/dev signs in without them.
+	if cfg.Env == EnvProd && len(cfg.AppleClientIDs) == 0 {
+		problems = append(problems, errors.New("APPLE_CLIENT_IDS is required in prod"))
+	}
+	if cfg.Env == EnvProd && len(cfg.GoogleClientIDs) == 0 {
+		problems = append(problems, errors.New("GOOGLE_CLIENT_IDS is required in prod"))
+	}
 	if len(problems) > 0 {
 		return Config{}, fmt.Errorf("invalid config: %w", errors.Join(problems...))
 	}
@@ -54,3 +77,14 @@ func Load(getenv func(string) string) (Config, error) {
 
 // FromEnvironment loads the settings from the process environment.
 func FromEnvironment() (Config, error) { return Load(os.Getenv) }
+
+// list splits a comma-separated setting, dropping blanks.
+func list(raw string) []string {
+	var values []string
+	for _, value := range strings.Split(raw, ",") {
+		if value = strings.TrimSpace(value); value != "" {
+			values = append(values, value)
+		}
+	}
+	return values
+}

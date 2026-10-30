@@ -11,4 +11,7 @@ var (
 	ErrNotFound = errors.New("not found")
 	// ErrConflict means the request clashes with data already saved, e.g. a duplicate name (409).
 	ErrConflict = errors.New("conflict")
+	// ErrUnauthorized means the request doesn't prove who it's from, e.g. a missing or expired
+	// token (401).
+	ErrUnauthorized = errors.New("unauthorized")
 )

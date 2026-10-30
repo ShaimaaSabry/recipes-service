@@ -18,7 +18,7 @@ cmd/main.go                 wiring only
 internal/
   platform/                 config, database, HTTP server: shared plumbing, no business rules
   shared/                   the small shared kernel: error kinds, the owner of the data
-  auth/                     (not started)
+  auth/                     accounts, Sign in with Apple/Google, access and refresh tokens
   recipes/
     module.go               the only package other code uses
     entrypoint/api/         HTTP controllers and request/response types
@@ -27,8 +27,22 @@ internal/
     infrastructure/         Postgres repositories and migrations
 ```
 
-Every request carries an `X-Device-Id` header saying whose data it is, until the auth module
-replaces it with an account.
+## Accounts and sign-in
+
+People sign in with Apple or Google. The app sends the provider's ID token to
+`POST /v1/auth/apple` or `/v1/auth/google`; the service checks it against Apple's or Google's
+published keys and the app's client IDs, creates the account on the first sign-in, and returns:
+
+- an **access token** (15 minutes), sent with every other request as `Authorization: Bearer <token>`.
+  Every piece of data belongs to the account it identifies.
+- a **refresh token** (60 days), traded at `POST /v1/auth/refresh` for a new pair. Each works once;
+  if a used one comes back, the whole session ends, in case it was stolen.
+
+`POST /v1/auth/sign-out` ends a session; `DELETE /v1/me` deletes the account and everything saved
+with it. Apple and Google sign-ins are separate accounts even with the same email.
+
+Locally, `POST /v1/auth/dev` with `{"name":"ada"}` signs in without Apple or Google: in Swagger, call
+it, then click **Authorize** and enter `Bearer <accessToken>`. It doesn't exist in prod.
 
 ## Environments
 
@@ -38,6 +52,8 @@ The same build runs everywhere; only environment variables differ (see `.env.exa
 |---|---|---|
 | `APP_ENV` | `local` | `prod` |
 | `DATABASE_URL` | Postgres in Docker Compose | RDS |
+| `JWT_SIGNING_KEY` | any 32+ characters | Secrets Manager (`mamie-nellie-auth`) |
+| `APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS` | empty (use `/v1/auth/dev`) | the app's bundle ID and Google client IDs |
 | Logs | text, with SQL | JSON |
 | Swagger UI | http://localhost:8080/swagger/index.html | off |
 

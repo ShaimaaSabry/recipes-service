@@ -1,5 +1,18 @@
 basePath: /v1
 definitions:
+  api.appleSignInRequest:
+    properties:
+      idToken:
+        description: IDToken is the identityToken from Sign in with Apple.
+        type: string
+      name:
+        description: Name is the full name Apple shows the app on the first sign-in
+          only. Optional.
+        maxLength: 200
+        type: string
+    required:
+    - idToken
+    type: object
   api.createRecipeRequest:
     properties:
       id:
@@ -12,6 +25,24 @@ definitions:
     required:
     - name
     type: object
+  api.devSignInRequest:
+    properties:
+      name:
+        description: Name picks the local test account; the same name signs into the
+          same account.
+        maxLength: 64
+        type: string
+    required:
+    - name
+    type: object
+  api.googleSignInRequest:
+    properties:
+      idToken:
+        description: IDToken is the idToken from Google Sign-In.
+        type: string
+    required:
+    - idToken
+    type: object
   api.recipeDTO:
     properties:
       id:
@@ -19,20 +50,225 @@ definitions:
       name:
         type: string
     type: object
+  api.refreshTokenRequest:
+    properties:
+      refreshToken:
+        type: string
+    required:
+    - refreshToken
+    type: object
+  api.signInResponse:
+    properties:
+      accessToken:
+        type: string
+      accessTokenExpiresAt:
+        type: string
+      newAccount:
+        description: NewAccount is true when this sign-in created the account, e.g.
+          to show onboarding.
+        type: boolean
+      refreshToken:
+        type: string
+      refreshTokenExpiresAt:
+        type: string
+      user:
+        $ref: '#/definitions/api.userDTO'
+    type: object
+  api.tokensDTO:
+    properties:
+      accessToken:
+        type: string
+      accessTokenExpiresAt:
+        type: string
+      refreshToken:
+        type: string
+      refreshTokenExpiresAt:
+        type: string
+    type: object
+  api.userDTO:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
 info:
   contact: {}
-  description: Recipes, grocery items and the grocery list for the MamieNellie app.
+  description: |-
+    Recipes, grocery items and the grocery list for the MamieNellie app.
+    Sign in (locally: POST /auth/dev), then click Authorize and enter "Bearer <accessToken>".
   title: MamieNellie API
   version: "1.0"
 paths:
+  /auth/apple:
+    post:
+      description: Creates the account on the first sign-in. Send the name Apple shows
+        on that first sign-in; Apple never repeats it.
+      parameters:
+      - description: Apple identity token
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.appleSignInRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.signInResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Sign in with Apple
+      tags:
+      - auth
+  /auth/dev:
+    post:
+      description: Only exists when running locally, for trying the API from Swagger.
+        The same name signs into the same test account.
+      parameters:
+      - description: Test account name
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.devSignInRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.signInResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Sign in without Apple or Google (local only)
+      tags:
+      - auth
+  /auth/google:
+    post:
+      description: Creates the account on the first sign-in.
+      parameters:
+      - description: Google ID token
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.googleSignInRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.signInResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Sign in with Google
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      description: Trades a refresh token for a new access token and a new refresh
+        token. Each refresh token works once; keep the new one.
+      parameters:
+      - description: Refresh token
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.refreshTokenRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.tokensDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get new tokens
+      tags:
+      - auth
+  /auth/sign-out:
+    post:
+      description: Ends the session the refresh token belongs to. Succeeds for an
+        already-ended session too.
+      parameters:
+      - description: Refresh token
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.refreshTokenRequest'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Sign out
+      tags:
+      - auth
+  /me:
+    delete:
+      description: Deletes the account and everything saved with it, and ends all
+        its sessions. It can't be undone.
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete the account
+      tags:
+      - account
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.userDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: The signed-in account
+      tags:
+      - account
   /recipes:
     get:
-      parameters:
-      - description: Owner of the data
-        in: header
-        name: X-Device-Id
-        required: true
-        type: string
       responses:
         "200":
           description: OK
@@ -40,16 +276,18 @@ paths:
             items:
               $ref: '#/definitions/api.recipeDTO'
             type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
       summary: List recipes
       tags:
       - recipes
     post:
       parameters:
-      - description: Owner of the data
-        in: header
-        name: X-Device-Id
-        required: true
-        type: string
       - description: Create recipe payload
         in: body
         name: payload
@@ -66,12 +304,25 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
         "409":
           description: Conflict
           schema:
             additionalProperties: true
             type: object
+      security:
+      - BearerAuth: []
       summary: Create a recipe
       tags:
       - recipes
+securityDefinitions:
+  BearerAuth:
+    description: '"Bearer " followed by the accessToken from signing in.'
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

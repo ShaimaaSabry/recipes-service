@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -57,21 +58,48 @@ func TestRequestLogger(t *testing.T) {
 }
 
 func TestRequireOwner(t *testing.T) {
+	authenticate := func(_ context.Context, token string) (owner.ID, error) {
+		if token != "good-token" {
+			return "", fmt.Errorf("%w: the access token is invalid or expired", apperrors.ErrUnauthorized)
+		}
+		return "user-1", nil
+	}
 	r := New(false)
-	r.GET("/mine", RequireOwner(), func(c *gin.Context) { c.String(http.StatusOK, string(OwnerOf(c))) })
+	r.GET("/mine", RequireOwner(authenticate), func(c *gin.Context) { c.String(http.StatusOK, string(OwnerOf(c))) })
 
-	t.Run("passes the owner to the handler", func(t *testing.T) {
-		response := serve(r, http.MethodGet, "/mine", "", map[string]string{owner.Header: "device-1"})
+	t.Run("passes the token's owner to the handler", func(t *testing.T) {
+		response := serve(r, http.MethodGet, "/mine", "", map[string]string{"Authorization": "Bearer good-token"})
 
 		require.Equal(t, http.StatusOK, response.Code)
-		require.Equal(t, "device-1", response.Body.String())
+		require.Equal(t, "user-1", response.Body.String())
 	})
 
-	t.Run("rejects a request without one", func(t *testing.T) {
-		response := serve(r, http.MethodGet, "/mine", "", nil)
+	t.Run("accepts the scheme in any case", func(t *testing.T) {
+		response := serve(r, http.MethodGet, "/mine", "", map[string]string{"Authorization": "bearer good-token"})
 
-		require.Equal(t, http.StatusBadRequest, response.Code)
-		require.JSONEq(t, `{"error":"invalid input: the X-Device-Id header is required"}`, response.Body.String())
+		require.Equal(t, http.StatusOK, response.Code)
+	})
+
+	for name, header := range map[string]string{
+		"no header":      "",
+		"another scheme": "Basic dXNlcjpwYXNz",
+		"no token":       "Bearer ",
+		"only the token": "good-token",
+	} {
+		t.Run("rejects "+name, func(t *testing.T) {
+			response := serve(r, http.MethodGet, "/mine", "", map[string]string{"Authorization": header})
+
+			require.Equal(t, http.StatusUnauthorized, response.Code)
+			require.Equal(t, "Bearer", response.Header().Get("WWW-Authenticate"))
+			require.JSONEq(t, `{"error":"unauthorized: sign in and send the access token as \"Authorization: Bearer <token>\""}`, response.Body.String())
+		})
+	}
+
+	t.Run("rejects a token the authenticator refuses", func(t *testing.T) {
+		response := serve(r, http.MethodGet, "/mine", "", map[string]string{"Authorization": "Bearer expired"})
+
+		require.Equal(t, http.StatusUnauthorized, response.Code)
+		require.JSONEq(t, `{"error":"unauthorized: the access token is invalid or expired"}`, response.Body.String())
 	})
 }
 

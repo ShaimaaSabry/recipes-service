@@ -21,3 +21,8 @@ hosted_zone_id = "Z0721032PXVLPVY3S3AI"
 shared_vpc_name        = "shomoa-clinics-vpc"
 shared_alb_name        = "shared-alb"
 listener_rule_priority = 200
+
+# Sign-in: the app's IDs with Apple and Google. Not secret (they're inside the app), but required:
+# the service refuses to start in prod without at least one of each.
+apple_client_ids  = [] # e.g. ["com.mamienellie.app"]
+google_client_ids = [] # e.g. ["<id>.apps.googleusercontent.com", ...] for iOS, Android and web

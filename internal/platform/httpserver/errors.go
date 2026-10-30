@@ -17,7 +17,7 @@ import (
 // ErrorHandler turns the last error a handler added with ctx.Error into a JSON response:
 //
 //	{"errors":{"name":"is required"}}   400, for a body that is malformed or fails validation
-//	{"error":"<message>"}               400/404/409 for apperrors kinds, 500 for anything else
+//	{"error":"<message>"}               400/401/404/409 for apperrors kinds, 500 for anything else
 func ErrorHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
@@ -107,6 +107,9 @@ func handleAppError(c *gin.Context, err error) bool {
 	switch {
 	case errors.Is(err, apperrors.ErrInvalidInput):
 		writeJSONError(c, http.StatusBadRequest, err.Error())
+	case errors.Is(err, apperrors.ErrUnauthorized):
+		c.Header("WWW-Authenticate", "Bearer")
+		writeJSONError(c, http.StatusUnauthorized, err.Error())
 	case errors.Is(err, apperrors.ErrNotFound):
 		writeJSONError(c, http.StatusNotFound, err.Error())
 	case errors.Is(err, apperrors.ErrConflict):

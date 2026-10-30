@@ -37,13 +37,14 @@ func (m *getRecipesInteractorMock) Execute(_ context.Context, query getrecipes.Q
 func setup() (*gin.Engine, *getRecipesInteractorMock, *createRecipeInteractorMock) {
 	getRecipes, createRecipe := new(getRecipesInteractorMock), new(createRecipeInteractorMock)
 	r := httpserver.New(false)
-	NewRecipeController(getRecipes, createRecipe).RegisterRoutes(r.Group("/v1", httpserver.RequireOwner()))
+	authenticate := func(context.Context, string) (owner.ID, error) { return "device-1", nil }
+	NewRecipeController(getRecipes, createRecipe).RegisterRoutes(r.Group("/v1", httpserver.RequireOwner(authenticate)))
 	return r, getRecipes, createRecipe
 }
 
 func send(r *gin.Engine, method, path, body string) *httptest.ResponseRecorder {
 	request := httptest.NewRequest(method, path, bytes.NewBufferString(body))
-	request.Header.Set(owner.Header, "device-1")
+	request.Header.Set("Authorization", "Bearer token")
 	recorder := httptest.NewRecorder()
 	r.ServeHTTP(recorder, request)
 	return recorder

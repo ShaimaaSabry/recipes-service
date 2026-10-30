@@ -61,3 +61,13 @@ variable "listener_rule_priority" {
   description = "Priority of this service's rule on the shared HTTPS listener. Unique on that listener."
   type        = number
 }
+
+variable "apple_client_ids" {
+  description = "Bundle IDs Sign in with Apple tokens must be issued for. The service won't start without one."
+  type        = list(string)
+}
+
+variable "google_client_ids" {
+  description = "Google OAuth client IDs (iOS, Android, web) Google Sign-In tokens must be issued for. The service won't start without one."
+  type        = list(string)
+}

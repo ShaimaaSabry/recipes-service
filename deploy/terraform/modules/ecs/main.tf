@@ -44,10 +44,10 @@ resource "aws_iam_role_policy" "execution_secrets" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Sid      = "ReadDatabaseSecret"
+      Sid      = "ReadSecrets"
       Effect   = "Allow"
       Action   = ["secretsmanager:GetSecretValue"]
-      Resource = [var.database_secret_arn]
+      Resource = [var.database_secret_arn, var.auth_secret_arn]
     }]
   })
 }
@@ -214,9 +214,12 @@ resource "aws_ecs_task_definition" "this" {
       { name = "AWS_REGION", value = local.region },
       { name = "PHOTOS_BUCKET", value = var.photos_bucket_name },
       { name = "PHOTOS_URL", value = var.photos_url },
+      { name = "APPLE_CLIENT_IDS", value = join(",", var.apple_client_ids) },
+      { name = "GOOGLE_CLIENT_IDS", value = join(",", var.google_client_ids) },
     ]
     secrets = [
       { name = "DATABASE_URL", valueFrom = "${var.database_secret_arn}:DATABASE_URL::" },
+      { name = "JWT_SIGNING_KEY", valueFrom = "${var.auth_secret_arn}:JWT_SIGNING_KEY::" },
     ]
 
     healthCheck = {

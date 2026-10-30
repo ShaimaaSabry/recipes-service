@@ -3,6 +3,11 @@ output "api_url" {
   value       = "https://${var.domain_name}"
 }
 
+output "auth_secret_name" {
+  description = "Secret to set JWT_SIGNING_KEY in by hand."
+  value       = aws_secretsmanager_secret.auth.name
+}
+
 output "database_secret_name" {
   description = "Secret to set DATABASE_URL in by hand."
   value       = aws_secretsmanager_secret.database.name

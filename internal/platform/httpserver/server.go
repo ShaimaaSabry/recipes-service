@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/mamienellie/recipes-service/internal/shared/apperrors"
 	"github.com/mamienellie/recipes-service/internal/shared/owner"
 )
 
@@ -56,10 +57,24 @@ func requestLogger() gin.HandlerFunc {
 	}
 }
 
-// RequireOwner rejects requests without an owner, and keeps the owner for OwnerOf.
-func RequireOwner() gin.HandlerFunc {
+// Authenticator turns an access token into the owner it was issued to, or fails with
+// apperrors.ErrUnauthorized. The auth module provides it.
+type Authenticator func(ctx context.Context, accessToken string) (owner.ID, error)
+
+// ErrMissingToken is returned for a request without an "Authorization: Bearer <token>" header.
+var ErrMissingToken = fmt.Errorf("%w: sign in and send the access token as \"Authorization: Bearer <token>\"", apperrors.ErrUnauthorized)
+
+// RequireOwner rejects requests without a valid access token, and keeps the owner for OwnerOf.
+func RequireOwner(authenticate Authenticator) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id, err := owner.Parse(c.GetHeader(owner.Header))
+		scheme, token, _ := strings.Cut(c.GetHeader("Authorization"), " ")
+		token = strings.TrimSpace(token)
+		if !strings.EqualFold(scheme, "Bearer") || token == "" {
+			_ = c.Error(ErrMissingToken)
+			c.Abort()
+			return
+		}
+		id, err := authenticate(c.Request.Context(), token)
 		if err != nil {
 			_ = c.Error(err)
 			c.Abort()
