@@ -11,6 +11,7 @@ import (
 
 	"github.com/mamienellie/recipes-service/internal/auth/application/session"
 	"github.com/mamienellie/recipes-service/internal/auth/domain/model"
+	"github.com/mamienellie/recipes-service/internal/shared/owner"
 )
 
 type fakeVerifier struct {
@@ -93,6 +94,33 @@ func TestExecute(t *testing.T) {
 
 		require.True(t, errors.Is(err, model.ErrInvalidProviderToken))
 		require.Nil(t, users.created)
+		require.Equal(t, uuid.Nil, issuer.startedFor)
+	})
+
+	t.Run("prepares the account on every sign-in, before issuing tokens", func(t *testing.T) {
+		existing := model.Of(uuid.New(), "", "Ada", now)
+		var prepared []owner.ID
+		prepare := func(_ context.Context, o owner.ID) error {
+			prepared = append(prepared, o)
+			return nil
+		}
+		interactor := NewInteractor(fakeVerifier{}, &fakeUsers{existing: existing}, &fakeIssuer{}, clock, prepare)
+
+		for range 2 {
+			_, err := interactor.Execute(ctx, Command{Provider: model.ProviderApple})
+			require.NoError(t, err)
+		}
+
+		require.Equal(t, []owner.ID{existing.Owner(), existing.Owner()}, prepared)
+	})
+
+	t.Run("fails without tokens when preparing the account fails", func(t *testing.T) {
+		issuer := &fakeIssuer{}
+		failing := func(context.Context, owner.ID) error { return errors.New("database down") }
+
+		_, err := NewInteractor(fakeVerifier{}, &fakeUsers{}, issuer, clock, failing).Execute(ctx, Command{Provider: model.ProviderApple})
+
+		require.ErrorContains(t, err, "database down")
 		require.Equal(t, uuid.Nil, issuer.startedFor)
 	})
 }

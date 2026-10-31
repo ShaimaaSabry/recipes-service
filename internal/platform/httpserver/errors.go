@@ -95,6 +95,10 @@ func humanizeValidationMsg(fe validator.FieldError) string {
 		return fmt.Sprintf("must be at least %s", fe.Param())
 	case "max":
 		return fmt.Sprintf("must be at most %s", fe.Param())
+	case "gt":
+		return fmt.Sprintf("must be more than %s", fe.Param())
+	case "uuid":
+		return "must be a UUID"
 	case "oneof":
 		return fmt.Sprintf("must be one of [%s]", fe.Param())
 	default:

@@ -201,6 +201,572 @@
                 }
             }
         },
+        "/catalog": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Everything the app needs to describe groceries and convert amounts offline: the\nunits, and the account's categories and items (hidden ones too) with their units\nand conversions. Send the last ETag as If-None-Match: when nothing changed, the\nanswer is 304 with no body.",
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Get the units, categories and grocery items",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ETag of the catalog the app already has",
+                        "name": "If-None-Match",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.catalogDTO"
+                        },
+                        "headers": {
+                            "ETag": {
+                                "type": "string",
+                                "description": "Version of this catalog"
+                            }
+                        }
+                    },
+                    "304": {
+                        "description": "Not modified"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/categories": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Add a category",
+                "parameters": [
+                    {
+                        "description": "The category",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.categoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.categoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Another category has that name",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/categories/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Starter categories can be renamed too.",
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Rename a category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The category",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.categoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.categoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Another category has that name",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Only the account's own categories, and only once no item is in them. Starter ones\ncan be hidden instead.",
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Delete a category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "A starter category, or one with items in it",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/categories/{id}/hidden": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "A hidden category isn't offered when picking one; its items stay in it.",
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Hide or show a category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Hide or show",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.hiddenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.categoryDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/items": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Conversions are the item's own (\"1 head = 10 clove\"); standard ones (1 kg = 1000 g)\nfollow from the units and are refused. Each must be needed: one that already follows\nfrom the others is refused, so two rules can't disagree.",
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Add a grocery item",
+                "parameters": [
+                    {
+                        "description": "The item",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.createItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.itemDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Another item has that name",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/items/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Starter items can be changed too. Leave out conversions to keep the saved ones,\nminus any naming a unit the item no longer has.",
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Change a grocery item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The item",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.editItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.itemDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Another item has that name",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Only the account's own items. Starter ones can be hidden instead.",
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Delete a grocery item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "A starter item",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/items/{id}/conversions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "\"1 fromUnit = factor toUnit\" for this item, replacing the one for the same two units\n(either way round) if there is one. Used to answer \"1 box = ? piece\".",
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Add a conversion to a grocery item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The conversion",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.conversionDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.itemDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/items/{id}/hidden": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "A hidden item isn't offered when picking one.",
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Hide or show a grocery item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Hide or show",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.hiddenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.itemDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/me": {
             "get": {
                 "security": [
@@ -354,6 +920,135 @@
                 }
             }
         },
+        "api.catalogDTO": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.categoryDTO"
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.itemDTO"
+                    }
+                },
+                "units": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.unitDTO"
+                    }
+                }
+            }
+        },
+        "api.categoryDTO": {
+            "type": "object",
+            "properties": {
+                "emoji": {
+                    "type": "string",
+                    "example": "🥕"
+                },
+                "hidden": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Produce"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "system",
+                        "user"
+                    ]
+                }
+            }
+        },
+        "api.categoryRequest": {
+            "type": "object",
+            "required": [
+                "emoji",
+                "name"
+            ],
+            "properties": {
+                "emoji": {
+                    "type": "string",
+                    "example": "🧊"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Frozen"
+                }
+            }
+        },
+        "api.conversionDTO": {
+            "type": "object",
+            "required": [
+                "factor",
+                "fromUnitId",
+                "toUnitId"
+            ],
+            "properties": {
+                "factor": {
+                    "type": "number",
+                    "example": 10
+                },
+                "fromUnitId": {
+                    "type": "string",
+                    "example": "01a19182-b211-7207-a87a-4bec8f271f32"
+                },
+                "toUnitId": {
+                    "type": "string",
+                    "example": "01a19182-b211-7226-8fd7-e7f5ebfa367e"
+                }
+            }
+        },
+        "api.createItemRequest": {
+            "type": "object",
+            "required": [
+                "buyUnitIds",
+                "categoryId",
+                "emoji",
+                "name"
+            ],
+            "properties": {
+                "buyUnitIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "categoryId": {
+                    "type": "string"
+                },
+                "conversions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.conversionDTO"
+                    }
+                },
+                "cookUnitIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "emoji": {
+                    "type": "string",
+                    "example": "🧄"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Black garlic"
+                }
+            }
+        },
         "api.createRecipeRequest": {
             "type": "object",
             "required": [
@@ -383,6 +1078,48 @@
                 }
             }
         },
+        "api.editItemRequest": {
+            "type": "object",
+            "required": [
+                "buyUnitIds",
+                "categoryId",
+                "emoji",
+                "name"
+            ],
+            "properties": {
+                "buyUnitIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "categoryId": {
+                    "type": "string"
+                },
+                "conversions": {
+                    "description": "Conversions replace the item's. Leave it out to keep the saved ones (minus any naming a unit\nthe item no longer has).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.conversionDTO"
+                    }
+                },
+                "cookUnitIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "emoji": {
+                    "type": "string",
+                    "example": "🧄"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Black garlic"
+                }
+            }
+        },
         "api.googleSignInRequest": {
             "type": "object",
             "required": [
@@ -392,6 +1129,66 @@
                 "idToken": {
                     "description": "IDToken is the idToken from Google Sign-In.",
                     "type": "string"
+                }
+            }
+        },
+        "api.hiddenRequest": {
+            "type": "object",
+            "required": [
+                "hidden"
+            ],
+            "properties": {
+                "hidden": {
+                    "description": "Hidden leaves the record out of the app's pickers; false shows it again.",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "api.itemDTO": {
+            "type": "object",
+            "properties": {
+                "buyUnitIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "categoryId": {
+                    "type": "string"
+                },
+                "conversions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.conversionDTO"
+                    }
+                },
+                "cookUnitIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "emoji": {
+                    "type": "string",
+                    "example": "🧄"
+                },
+                "hidden": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Garlic"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "system",
+                        "user"
+                    ]
                 }
             }
         },
@@ -455,6 +1252,34 @@
                 },
                 "refreshTokenExpiresAt": {
                     "type": "string"
+                }
+            }
+        },
+        "api.unitDTO": {
+            "type": "object",
+            "properties": {
+                "baseSize": {
+                    "type": "number",
+                    "example": 240
+                },
+                "baseUnitId": {
+                    "description": "BaseUnitID and BaseSize: one of this unit is BaseSize of BaseUnitID (1 cup = 240 ml). Units\nwith the same base convert into each other. Both null for units whose size depends on the\nitem (pack, head…).",
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string",
+                    "example": "cup"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "cup"
+                },
+                "soldWhole": {
+                    "description": "SoldWhole: the grocery list rounds amounts in this unit up to whole numbers.",
+                    "type": "boolean"
                 }
             }
         },

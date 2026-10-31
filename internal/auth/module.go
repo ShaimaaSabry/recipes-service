@@ -36,6 +36,17 @@ const (
 // OwnerDataDeleter deletes everything a module stores for an owner when the account is deleted.
 type OwnerDataDeleter = deleteaccount.OwnerDataDeleter
 
+// AccountPreparer readies what a module keeps for an account (its starter data) on every sign-in.
+type AccountPreparer = signin.AccountPreparer
+
+// Hooks are how other modules take part in an account's life.
+type Hooks struct {
+	// PrepareAccount run, in order, on every sign-in before the tokens are issued.
+	PrepareAccount []AccountPreparer
+	// DeleteOwnerData run, in order, before an account is deleted.
+	DeleteOwnerData []OwnerDataDeleter
+}
+
 type Settings struct {
 	// SigningKey signs access tokens: at least 32 random bytes, the same on every server.
 	SigningKey      []byte
@@ -53,8 +64,8 @@ type Module struct {
 }
 
 // New wires the module. ctx must last as long as the server: the Apple and Google key sets fetch
-// with it. deleters are run, in order, before an account is deleted.
-func New(ctx context.Context, db *gorm.DB, settings Settings, deleters ...OwnerDataDeleter) (*Module, error) {
+// with it.
+func New(ctx context.Context, db *gorm.DB, settings Settings, hooks Hooks) (*Module, error) {
 	now := time.Now
 	tokens, err := accesstoken.New(settings.SigningKey, AccessTokenTTL, now)
 	if err != nil {
@@ -72,11 +83,11 @@ func New(ctx context.Context, db *gorm.DB, settings Settings, deleters ...OwnerD
 		allowDevSignIn: settings.AllowDevSignIn,
 		authenticate:   authenticate.NewInteractor(tokens, repository),
 		controller: api.NewAuthController(
-			signin.NewInteractor(verifier, repository, issuer, now),
+			signin.NewInteractor(verifier, repository, issuer, now, hooks.PrepareAccount...),
 			refreshsession.NewInteractor(repository, issuer, now),
 			signout.NewInteractor(repository, now),
 			getme.NewInteractor(repository),
-			deleteaccount.NewInteractor(repository, deleters...),
+			deleteaccount.NewInteractor(repository, hooks.DeleteOwnerData...),
 		),
 	}, nil
 }

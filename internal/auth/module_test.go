@@ -24,10 +24,10 @@ func newServer(t *testing.T, deleted *[]owner.ID) *gin.Engine {
 	module, err := New(ctx, databasetest.New(t), Settings{
 		SigningKey:     []byte("0123456789abcdef0123456789abcdef"),
 		AllowDevSignIn: true,
-	}, func(_ context.Context, o owner.ID) error {
+	}, Hooks{DeleteOwnerData: []OwnerDataDeleter{func(_ context.Context, o owner.ID) error {
 		*deleted = append(*deleted, o)
 		return nil
-	})
+	}}})
 	require.NoError(t, err)
 	require.NoError(t, module.Migrate(ctx))
 

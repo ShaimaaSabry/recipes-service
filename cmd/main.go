@@ -57,13 +57,19 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	recipesModule := recipes.New(db)
+	recipesModule, err := recipes.New(db)
+	if err != nil {
+		return err
+	}
 	authModule, err := auth.New(ctx, db, auth.Settings{
 		SigningKey:      []byte(cfg.JWTSigningKey),
 		AppleClientIDs:  cfg.AppleClientIDs,
 		GoogleClientIDs: cfg.GoogleClientIDs,
 		AllowDevSignIn:  cfg.IsLocal(),
-	}, recipesModule.DeleteOwnerData)
+	}, auth.Hooks{
+		PrepareAccount:  []auth.AccountPreparer{recipesModule.PrepareAccount},
+		DeleteOwnerData: []auth.OwnerDataDeleter{recipesModule.DeleteOwnerData},
+	})
 	if err != nil {
 		return err
 	}

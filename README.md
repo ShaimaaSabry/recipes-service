@@ -24,7 +24,7 @@ internal/
     entrypoint/api/         HTTP controllers and request/response types
     application/<usecase>/  one package per use case; each declares the repository it needs
     domain/model/           entities and business rules, no framework imports
-    infrastructure/         Postgres repositories and migrations
+    infrastructure/         Postgres repositories and migrations, the starter data file
 ```
 
 ## Accounts and sign-in
@@ -43,6 +43,24 @@ with it. Apple and Google sign-ins are separate accounts even with the same emai
 
 Locally, `POST /v1/auth/dev` with `{"name":"ada"}` signs in without Apple or Google: in Swagger, call
 it, then click **Authorize** and enter `Bearer <accessToken>`. It doesn't exist in prod.
+
+## Units, categories and grocery items
+
+- **Units are the same for everyone** and only change with a migration (`00002_create_catalog.sql`).
+  A unit with a base converts to every unit with the same base: 1 cup = 240 ml and 1 tbsp = 15 ml,
+  so 1 cup = 16 tbsp. Units without one (pack, head…) only convert through an item's own rules.
+  `soldWhole` units are rounded up to whole numbers on the grocery list.
+- **Categories and grocery items belong to each account.** Every account starts with its own copy
+  of `internal/recipes/infrastructure/starterdata/starter_data.json`, made on sign-in. Starter
+  records can be edited and hidden, not deleted; the account's own can be deleted.
+- **An item's own conversions** ("Garlic: 1 head = 10 clove") are chained with the standard ones,
+  so garlic goes head → clove → g → kg. A rule that already follows from the others or from the
+  units is refused, so two rules can never disagree.
+- **`GET /v1/catalog`** returns all of it, so the app can convert amounts offline. Send its `ETag`
+  back as `If-None-Match`: while nothing changed, the answer is `304` with no body.
+- The app converts amounts with the same logic.
+  `internal/recipes/domain/model/testdata/conversion_cases.json` holds the cases both must agree on;
+  the Go tests run them, and the app's tests should too.
 
 ## Environments
 

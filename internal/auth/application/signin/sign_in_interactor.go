@@ -11,7 +11,13 @@ import (
 
 	"github.com/mamienellie/recipes-service/internal/auth/application/session"
 	"github.com/mamienellie/recipes-service/internal/auth/domain/model"
+	"github.com/mamienellie/recipes-service/internal/shared/owner"
 )
+
+// AccountPreparer readies what one module keeps for an account, e.g. its starter data. It runs on
+// every sign-in, before the tokens are issued, so one that failed on the first sign-in is retried
+// on the next: it must do nothing for an account it has already prepared.
+type AccountPreparer func(ctx context.Context, owner owner.ID) error
 
 type identityVerifier interface {
 	// Verify checks the provider's ID token, failing with model.ErrInvalidProviderToken.
@@ -33,10 +39,11 @@ type Interactor struct {
 	userRepository userRepository
 	issuer         sessionIssuer
 	now            func() time.Time
+	preparers      []AccountPreparer
 }
 
-func NewInteractor(verifier identityVerifier, userRepository userRepository, issuer sessionIssuer, now func() time.Time) *Interactor {
-	return &Interactor{verifier: verifier, userRepository: userRepository, issuer: issuer, now: now}
+func NewInteractor(verifier identityVerifier, userRepository userRepository, issuer sessionIssuer, now func() time.Time, preparers ...AccountPreparer) *Interactor {
+	return &Interactor{verifier: verifier, userRepository: userRepository, issuer: issuer, now: now, preparers: preparers}
 }
 
 type Command struct {
@@ -70,6 +77,12 @@ func (i *Interactor) Execute(ctx context.Context, command Command) (Result, erro
 	user, created, err := i.userRepository.FindOrCreateUser(ctx, identity, model.NewUser(id, identity.Email, name, i.now()))
 	if err != nil {
 		return Result{}, err
+	}
+	// Without tokens the app can't go on, so a failure here fails the sign-in and the app retries.
+	for _, prepare := range i.preparers {
+		if err := prepare(ctx, user.Owner()); err != nil {
+			return Result{}, fmt.Errorf("prepare account: %w", err)
+		}
 	}
 	tokens, err := i.issuer.Start(ctx, user.ID())
 	if err != nil {

@@ -13,6 +13,96 @@ definitions:
     required:
     - idToken
     type: object
+  api.catalogDTO:
+    properties:
+      categories:
+        items:
+          $ref: '#/definitions/api.categoryDTO'
+        type: array
+      items:
+        items:
+          $ref: '#/definitions/api.itemDTO'
+        type: array
+      units:
+        items:
+          $ref: '#/definitions/api.unitDTO'
+        type: array
+    type: object
+  api.categoryDTO:
+    properties:
+      emoji:
+        example: "\U0001F955"
+        type: string
+      hidden:
+        type: boolean
+      id:
+        type: string
+      name:
+        example: Produce
+        type: string
+      source:
+        enum:
+        - system
+        - user
+        type: string
+    type: object
+  api.categoryRequest:
+    properties:
+      emoji:
+        example: "\U0001F9CA"
+        type: string
+      name:
+        example: Frozen
+        type: string
+    required:
+    - emoji
+    - name
+    type: object
+  api.conversionDTO:
+    properties:
+      factor:
+        example: 10
+        type: number
+      fromUnitId:
+        example: 01a19182-b211-7207-a87a-4bec8f271f32
+        type: string
+      toUnitId:
+        example: 01a19182-b211-7226-8fd7-e7f5ebfa367e
+        type: string
+    required:
+    - factor
+    - fromUnitId
+    - toUnitId
+    type: object
+  api.createItemRequest:
+    properties:
+      buyUnitIds:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      categoryId:
+        type: string
+      conversions:
+        items:
+          $ref: '#/definitions/api.conversionDTO'
+        type: array
+      cookUnitIds:
+        items:
+          type: string
+        type: array
+      emoji:
+        example: "\U0001F9C4"
+        type: string
+      name:
+        example: Black garlic
+        type: string
+    required:
+    - buyUnitIds
+    - categoryId
+    - emoji
+    - name
+    type: object
   api.createRecipeRequest:
     properties:
       id:
@@ -35,6 +125,38 @@ definitions:
     required:
     - name
     type: object
+  api.editItemRequest:
+    properties:
+      buyUnitIds:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      categoryId:
+        type: string
+      conversions:
+        description: |-
+          Conversions replace the item's. Leave it out to keep the saved ones (minus any naming a unit
+          the item no longer has).
+        items:
+          $ref: '#/definitions/api.conversionDTO'
+        type: array
+      cookUnitIds:
+        items:
+          type: string
+        type: array
+      emoji:
+        example: "\U0001F9C4"
+        type: string
+      name:
+        example: Black garlic
+        type: string
+    required:
+    - buyUnitIds
+    - categoryId
+    - emoji
+    - name
+    type: object
   api.googleSignInRequest:
     properties:
       idToken:
@@ -42,6 +164,48 @@ definitions:
         type: string
     required:
     - idToken
+    type: object
+  api.hiddenRequest:
+    properties:
+      hidden:
+        description: Hidden leaves the record out of the app's pickers; false shows
+          it again.
+        example: true
+        type: boolean
+    required:
+    - hidden
+    type: object
+  api.itemDTO:
+    properties:
+      buyUnitIds:
+        items:
+          type: string
+        type: array
+      categoryId:
+        type: string
+      conversions:
+        items:
+          $ref: '#/definitions/api.conversionDTO'
+        type: array
+      cookUnitIds:
+        items:
+          type: string
+        type: array
+      emoji:
+        example: "\U0001F9C4"
+        type: string
+      hidden:
+        type: boolean
+      id:
+        type: string
+      name:
+        example: Garlic
+        type: string
+      source:
+        enum:
+        - system
+        - user
+        type: string
     type: object
   api.recipeDTO:
     properties:
@@ -84,6 +248,30 @@ definitions:
         type: string
       refreshTokenExpiresAt:
         type: string
+    type: object
+  api.unitDTO:
+    properties:
+      baseSize:
+        example: 240
+        type: number
+      baseUnitId:
+        description: |-
+          BaseUnitID and BaseSize: one of this unit is BaseSize of BaseUnitID (1 cup = 240 ml). Units
+          with the same base convert into each other. Both null for units whose size depends on the
+          item (pack, head…).
+        type: string
+      code:
+        example: cup
+        type: string
+      id:
+        type: string
+      name:
+        example: cup
+        type: string
+      soldWhole:
+        description: 'SoldWhole: the grocery list rounds amounts in this unit up to
+          whole numbers.'
+        type: boolean
     type: object
   api.userDTO:
     properties:
@@ -234,6 +422,390 @@ paths:
       summary: Sign out
       tags:
       - auth
+  /catalog:
+    get:
+      description: |-
+        Everything the app needs to describe groceries and convert amounts offline: the
+        units, and the account's categories and items (hidden ones too) with their units
+        and conversions. Send the last ETag as If-None-Match: when nothing changed, the
+        answer is 304 with no body.
+      parameters:
+      - description: ETag of the catalog the app already has
+        in: header
+        name: If-None-Match
+        type: string
+      responses:
+        "200":
+          description: OK
+          headers:
+            ETag:
+              description: Version of this catalog
+              type: string
+          schema:
+            $ref: '#/definitions/api.catalogDTO'
+        "304":
+          description: Not modified
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get the units, categories and grocery items
+      tags:
+      - catalog
+  /categories:
+    post:
+      parameters:
+      - description: The category
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.categoryRequest'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.categoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Another category has that name
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add a category
+      tags:
+      - catalog
+  /categories/{id}:
+    delete:
+      description: |-
+        Only the account's own categories, and only once no item is in them. Starter ones
+        can be hidden instead.
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: A starter category, or one with items in it
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a category
+      tags:
+      - catalog
+    put:
+      description: Starter categories can be renamed too.
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The category
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.categoryRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.categoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Another category has that name
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Rename a category
+      tags:
+      - catalog
+  /categories/{id}/hidden:
+    put:
+      description: A hidden category isn't offered when picking one; its items stay
+        in it.
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Hide or show
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.hiddenRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.categoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Hide or show a category
+      tags:
+      - catalog
+  /items:
+    post:
+      description: |-
+        Conversions are the item's own ("1 head = 10 clove"); standard ones (1 kg = 1000 g)
+        follow from the units and are refused. Each must be needed: one that already follows
+        from the others is refused, so two rules can't disagree.
+      parameters:
+      - description: The item
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.createItemRequest'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.itemDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Another item has that name
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add a grocery item
+      tags:
+      - catalog
+  /items/{id}:
+    delete:
+      description: Only the account's own items. Starter ones can be hidden instead.
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: A starter item
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a grocery item
+      tags:
+      - catalog
+    put:
+      description: |-
+        Starter items can be changed too. Leave out conversions to keep the saved ones,
+        minus any naming a unit the item no longer has.
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The item
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.editItemRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.itemDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Another item has that name
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change a grocery item
+      tags:
+      - catalog
+  /items/{id}/conversions:
+    post:
+      description: |-
+        "1 fromUnit = factor toUnit" for this item, replacing the one for the same two units
+        (either way round) if there is one. Used to answer "1 box = ? piece".
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The conversion
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.conversionDTO'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.itemDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add a conversion to a grocery item
+      tags:
+      - catalog
+  /items/{id}/hidden:
+    put:
+      description: A hidden item isn't offered when picking one.
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Hide or show
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.hiddenRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.itemDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Hide or show a grocery item
+      tags:
+      - catalog
   /me:
     delete:
       description: Deletes the account and everything saved with it, and ends all
