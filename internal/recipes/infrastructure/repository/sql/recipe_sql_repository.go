@@ -216,7 +216,7 @@ func (r *RecipeSqlRepository) DeleteMeal(ctx context.Context, owner owner.ID, id
 // deletion. It runs before the catalog's, since both point at the owner's items.
 func (r *RecipeSqlRepository) DeleteOwnerData(ctx context.Context, owner owner.ID) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		for _, table := range []any{&groceryLineDBO{}, &appliedActionDBO{}, &recipeDBO{}} {
+		for _, table := range []any{&groceryLineDBO{}, &appliedActionDBO{}, &localImportDBO{}, &recipeDBO{}} {
 			if err := tx.Where("owner_id = ?", string(owner)).Delete(table).Error; err != nil {
 				return fmt.Errorf("delete recipes: %w", err)
 			}

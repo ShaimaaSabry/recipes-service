@@ -1,0 +1,1331 @@
+{
+  "version": 4,
+  "units": [
+    {
+      "id": "unit-piece",
+      "name": "piece",
+      "source": "system"
+    },
+    {
+      "id": "unit-dozen",
+      "name": "dozen",
+      "source": "system"
+    },
+    {
+      "id": "unit-kg",
+      "name": "kg",
+      "source": "system"
+    },
+    {
+      "id": "unit-g",
+      "name": "g",
+      "source": "system"
+    },
+    {
+      "id": "unit-l",
+      "name": "L",
+      "source": "system"
+    },
+    {
+      "id": "unit-ml",
+      "name": "ml",
+      "source": "system"
+    },
+    {
+      "id": "unit-pack",
+      "name": "pack",
+      "source": "system"
+    },
+    {
+      "id": "unit-box",
+      "name": "box",
+      "source": "system"
+    },
+    {
+      "id": "unit-bottle",
+      "name": "bottle",
+      "source": "system"
+    },
+    {
+      "id": "unit-can",
+      "name": "can",
+      "source": "system"
+    },
+    {
+      "id": "unit-jar",
+      "name": "jar",
+      "source": "system"
+    },
+    {
+      "id": "unit-bunch",
+      "name": "bunch",
+      "source": "system"
+    },
+    {
+      "id": "unit-cup",
+      "name": "cup",
+      "source": "system"
+    },
+    {
+      "id": "unit-tbsp",
+      "name": "tbsp",
+      "source": "system"
+    },
+    {
+      "id": "unit-tsp",
+      "name": "tsp",
+      "source": "system"
+    },
+    {
+      "id": "unit-pinch",
+      "name": "pinch",
+      "source": "system"
+    },
+    {
+      "id": "unit-sprinkle",
+      "name": "sprinkle",
+      "source": "system"
+    },
+    {
+      "id": "unit-head",
+      "name": "head",
+      "source": "system"
+    },
+    {
+      "id": "unit-clove",
+      "name": "clove",
+      "source": "system"
+    },
+    {
+      "id": "u-sachet",
+      "name": "Sachet",
+      "source": "user"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-produce",
+      "name": "Produce",
+      "emoji": "🥕",
+      "source": "system"
+    },
+    {
+      "id": "cat-dairy",
+      "name": "Dairy & Eggs",
+      "emoji": "🥛",
+      "source": "system"
+    },
+    {
+      "id": "cat-meat",
+      "name": "Meat",
+      "emoji": "🥩",
+      "source": "system"
+    },
+    {
+      "id": "cat-poultry",
+      "name": "Poultry",
+      "emoji": "🍗",
+      "source": "system"
+    },
+    {
+      "id": "cat-seafood",
+      "name": "Seafood",
+      "emoji": "🐟",
+      "source": "system"
+    },
+    {
+      "id": "cat-bakery",
+      "name": "Bakery",
+      "emoji": "🍞",
+      "source": "system"
+    },
+    {
+      "id": "cat-pantry",
+      "name": "Pantry",
+      "emoji": "🫙",
+      "source": "system"
+    },
+    {
+      "id": "cat-spices",
+      "name": "Spices",
+      "emoji": "🧂",
+      "source": "system"
+    },
+    {
+      "id": "cat-drinks",
+      "name": "Drinks",
+      "emoji": "🧃",
+      "source": "system"
+    },
+    {
+      "id": "cat-household",
+      "name": "Household",
+      "emoji": "🧽",
+      "source": "system"
+    },
+    {
+      "id": "c-baking",
+      "name": "Baking",
+      "emoji": "🧁",
+      "source": "user"
+    }
+  ],
+  "items": [
+    {
+      "id": "item-tomatoes",
+      "source": "system",
+      "name": "Tomatoes",
+      "emoji": "🍅",
+      "categoryId": "cat-produce",
+      "unitIds": [
+        "unit-kg",
+        "unit-piece",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-kg",
+        "unit-piece"
+      ],
+      "cookUnitIds": [
+        "unit-piece",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-g",
+          "factor": 120
+        }
+      ]
+    },
+    {
+      "id": "item-onions",
+      "source": "system",
+      "name": "Onions",
+      "emoji": "🧅",
+      "categoryId": "cat-produce",
+      "unitIds": [
+        "unit-kg",
+        "unit-piece",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-kg",
+        "unit-piece"
+      ],
+      "cookUnitIds": [
+        "unit-piece",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-g",
+          "factor": 150
+        }
+      ]
+    },
+    {
+      "id": "item-garlic",
+      "source": "system",
+      "name": "Garlic",
+      "emoji": "🧄",
+      "categoryId": "cat-produce",
+      "unitIds": [
+        "unit-head",
+        "unit-g",
+        "unit-clove"
+      ],
+      "buyUnitIds": [
+        "unit-head",
+        "unit-g"
+      ],
+      "cookUnitIds": [
+        "unit-clove",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-head",
+          "toUnitId": "unit-clove",
+          "factor": 10
+        },
+        {
+          "fromUnitId": "unit-clove",
+          "toUnitId": "unit-g",
+          "factor": 5
+        }
+      ]
+    },
+    {
+      "id": "item-potatoes",
+      "source": "system",
+      "name": "Potatoes",
+      "emoji": "🥔",
+      "categoryId": "cat-produce",
+      "unitIds": [
+        "unit-kg",
+        "unit-piece",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-kg"
+      ],
+      "cookUnitIds": [
+        "unit-piece",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-g",
+          "factor": 200
+        }
+      ]
+    },
+    {
+      "id": "item-carrots",
+      "source": "system",
+      "name": "Carrots",
+      "emoji": "🥕",
+      "categoryId": "cat-produce",
+      "unitIds": [
+        "unit-kg",
+        "unit-piece",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-kg"
+      ],
+      "cookUnitIds": [
+        "unit-piece",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-g",
+          "factor": 100
+        }
+      ]
+    },
+    {
+      "id": "item-bell-pepper",
+      "source": "system",
+      "name": "Bell pepper",
+      "emoji": "🫑",
+      "categoryId": "cat-produce",
+      "unitIds": [
+        "unit-piece",
+        "unit-kg"
+      ],
+      "buyUnitIds": [
+        "unit-piece",
+        "unit-kg"
+      ],
+      "cookUnitIds": [
+        "unit-piece"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-g",
+          "factor": 150
+        }
+      ]
+    },
+    {
+      "id": "item-lemons",
+      "source": "system",
+      "name": "Lemons",
+      "emoji": "🍋",
+      "categoryId": "cat-produce",
+      "unitIds": [
+        "unit-piece",
+        "unit-kg",
+        "unit-tbsp"
+      ],
+      "buyUnitIds": [
+        "unit-piece",
+        "unit-kg"
+      ],
+      "cookUnitIds": [
+        "unit-piece",
+        "unit-tbsp"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-g",
+          "factor": 100
+        },
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-tbsp",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "item-apples",
+      "source": "system",
+      "name": "Apples",
+      "emoji": "🍎",
+      "categoryId": "cat-produce",
+      "unitIds": [
+        "unit-piece",
+        "unit-kg",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-piece",
+        "unit-kg"
+      ],
+      "cookUnitIds": [
+        "unit-piece",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-g",
+          "factor": 180
+        }
+      ]
+    },
+    {
+      "id": "item-parsley",
+      "source": "system",
+      "name": "Parsley",
+      "emoji": "🌿",
+      "categoryId": "cat-produce",
+      "unitIds": [
+        "unit-bunch",
+        "unit-tbsp"
+      ],
+      "buyUnitIds": [
+        "unit-bunch"
+      ],
+      "cookUnitIds": [
+        "unit-bunch",
+        "unit-tbsp"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-bunch",
+          "toUnitId": "unit-tbsp",
+          "factor": 12
+        }
+      ]
+    },
+    {
+      "id": "item-milk",
+      "source": "system",
+      "name": "Whole milk",
+      "emoji": "🥛",
+      "categoryId": "cat-dairy",
+      "unitIds": [
+        "unit-l",
+        "unit-bottle",
+        "unit-ml",
+        "unit-cup"
+      ],
+      "buyUnitIds": [
+        "unit-l",
+        "unit-bottle"
+      ],
+      "cookUnitIds": [
+        "unit-ml",
+        "unit-cup"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-bottle",
+          "toUnitId": "unit-l",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "item-yogurt",
+      "source": "system",
+      "name": "Yogurt",
+      "emoji": "🍶",
+      "categoryId": "cat-dairy",
+      "unitIds": [
+        "unit-pack",
+        "unit-piece",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-pack",
+        "unit-piece"
+      ],
+      "cookUnitIds": [
+        "unit-piece",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-pack",
+          "toUnitId": "unit-piece",
+          "factor": 4
+        },
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-g",
+          "factor": 125
+        }
+      ]
+    },
+    {
+      "id": "item-eggs",
+      "source": "system",
+      "name": "Eggs",
+      "emoji": "🥚",
+      "categoryId": "cat-dairy",
+      "unitIds": [
+        "unit-dozen",
+        "unit-piece"
+      ],
+      "buyUnitIds": [
+        "unit-dozen",
+        "unit-piece"
+      ],
+      "cookUnitIds": [
+        "unit-piece"
+      ],
+      "conversions": []
+    },
+    {
+      "id": "item-butter",
+      "source": "system",
+      "name": "Butter",
+      "emoji": "🧈",
+      "categoryId": "cat-dairy",
+      "unitIds": [
+        "unit-pack",
+        "unit-g",
+        "unit-tbsp"
+      ],
+      "buyUnitIds": [
+        "unit-pack"
+      ],
+      "cookUnitIds": [
+        "unit-g",
+        "unit-tbsp"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-pack",
+          "toUnitId": "unit-g",
+          "factor": 200
+        },
+        {
+          "fromUnitId": "unit-tbsp",
+          "toUnitId": "unit-g",
+          "factor": 14
+        }
+      ]
+    },
+    {
+      "id": "item-cheese",
+      "source": "system",
+      "name": "Cheese",
+      "emoji": "🧀",
+      "categoryId": "cat-dairy",
+      "unitIds": [
+        "unit-pack",
+        "unit-kg",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-pack",
+        "unit-kg"
+      ],
+      "cookUnitIds": [
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-pack",
+          "toUnitId": "unit-g",
+          "factor": 200
+        }
+      ]
+    },
+    {
+      "id": "item-ground-beef",
+      "source": "system",
+      "name": "Ground beef",
+      "emoji": "🥩",
+      "categoryId": "cat-meat",
+      "unitIds": [
+        "unit-kg",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-kg",
+        "unit-g"
+      ],
+      "cookUnitIds": [
+        "unit-g"
+      ],
+      "conversions": []
+    },
+    {
+      "id": "item-chicken-breast",
+      "source": "system",
+      "name": "Chicken breast",
+      "emoji": "🍗",
+      "categoryId": "cat-poultry",
+      "unitIds": [
+        "unit-kg",
+        "unit-pack",
+        "unit-piece",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-kg",
+        "unit-pack"
+      ],
+      "cookUnitIds": [
+        "unit-piece",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-pack",
+          "toUnitId": "unit-g",
+          "factor": 500
+        },
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-g",
+          "factor": 200
+        }
+      ]
+    },
+    {
+      "id": "item-whole-chicken",
+      "source": "system",
+      "name": "Whole chicken",
+      "emoji": "🐔",
+      "categoryId": "cat-poultry",
+      "unitIds": [
+        "unit-piece"
+      ],
+      "buyUnitIds": [
+        "unit-piece"
+      ],
+      "cookUnitIds": [
+        "unit-piece"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-kg",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "id": "item-salmon",
+      "source": "system",
+      "name": "Salmon",
+      "emoji": "🐟",
+      "categoryId": "cat-seafood",
+      "unitIds": [
+        "unit-kg",
+        "unit-g",
+        "unit-piece"
+      ],
+      "buyUnitIds": [
+        "unit-kg",
+        "unit-g"
+      ],
+      "cookUnitIds": [
+        "unit-g",
+        "unit-piece"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-piece",
+          "toUnitId": "unit-g",
+          "factor": 150
+        }
+      ]
+    },
+    {
+      "id": "item-bread",
+      "source": "system",
+      "name": "Bread",
+      "emoji": "🍞",
+      "categoryId": "cat-bakery",
+      "unitIds": [
+        "unit-piece",
+        "unit-pack"
+      ],
+      "buyUnitIds": [
+        "unit-piece",
+        "unit-pack"
+      ],
+      "cookUnitIds": [
+        "unit-piece"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-pack",
+          "toUnitId": "unit-piece",
+          "factor": 6
+        }
+      ]
+    },
+    {
+      "id": "item-flour",
+      "source": "system",
+      "name": "Flour",
+      "emoji": "🌾",
+      "categoryId": "cat-pantry",
+      "unitIds": [
+        "unit-kg",
+        "unit-g",
+        "unit-cup",
+        "unit-tbsp"
+      ],
+      "buyUnitIds": [
+        "unit-kg"
+      ],
+      "cookUnitIds": [
+        "unit-g",
+        "unit-cup",
+        "unit-tbsp"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-cup",
+          "toUnitId": "unit-g",
+          "factor": 125
+        }
+      ]
+    },
+    {
+      "id": "item-sugar",
+      "source": "system",
+      "name": "Sugar",
+      "emoji": "🍬",
+      "categoryId": "cat-pantry",
+      "unitIds": [
+        "unit-kg",
+        "unit-g",
+        "unit-cup",
+        "unit-tbsp"
+      ],
+      "buyUnitIds": [
+        "unit-kg"
+      ],
+      "cookUnitIds": [
+        "unit-g",
+        "unit-cup",
+        "unit-tbsp"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-cup",
+          "toUnitId": "unit-g",
+          "factor": 200
+        }
+      ]
+    },
+    {
+      "id": "item-rice",
+      "source": "system",
+      "name": "Rice",
+      "emoji": "🍚",
+      "categoryId": "cat-pantry",
+      "unitIds": [
+        "unit-kg",
+        "unit-g",
+        "unit-cup"
+      ],
+      "buyUnitIds": [
+        "unit-kg"
+      ],
+      "cookUnitIds": [
+        "unit-g",
+        "unit-cup"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-cup",
+          "toUnitId": "unit-g",
+          "factor": 185
+        }
+      ]
+    },
+    {
+      "id": "item-red-lentils",
+      "source": "system",
+      "name": "Red lentils",
+      "emoji": "🫘",
+      "categoryId": "cat-pantry",
+      "unitIds": [
+        "unit-kg",
+        "unit-g",
+        "unit-cup"
+      ],
+      "buyUnitIds": [
+        "unit-kg"
+      ],
+      "cookUnitIds": [
+        "unit-g",
+        "unit-cup"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-cup",
+          "toUnitId": "unit-g",
+          "factor": 190
+        }
+      ]
+    },
+    {
+      "id": "item-olive-oil",
+      "source": "system",
+      "name": "Olive oil",
+      "emoji": "🫒",
+      "categoryId": "cat-pantry",
+      "unitIds": [
+        "unit-bottle",
+        "unit-tbsp",
+        "unit-ml"
+      ],
+      "buyUnitIds": [
+        "unit-bottle"
+      ],
+      "cookUnitIds": [
+        "unit-tbsp",
+        "unit-ml"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-bottle",
+          "toUnitId": "unit-ml",
+          "factor": 750
+        }
+      ]
+    },
+    {
+      "id": "item-crushed-tomatoes",
+      "source": "system",
+      "name": "Crushed tomatoes",
+      "emoji": "🥫",
+      "categoryId": "cat-pantry",
+      "unitIds": [
+        "unit-can",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-can"
+      ],
+      "cookUnitIds": [
+        "unit-can",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-can",
+          "toUnitId": "unit-g",
+          "factor": 400
+        }
+      ]
+    },
+    {
+      "id": "item-honey",
+      "source": "system",
+      "name": "Honey",
+      "emoji": "🍯",
+      "categoryId": "cat-pantry",
+      "unitIds": [
+        "unit-jar",
+        "unit-tbsp",
+        "unit-tsp"
+      ],
+      "buyUnitIds": [
+        "unit-jar"
+      ],
+      "cookUnitIds": [
+        "unit-tbsp",
+        "unit-tsp"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-jar",
+          "toUnitId": "unit-tbsp",
+          "factor": 21
+        }
+      ]
+    },
+    {
+      "id": "item-baking-powder",
+      "source": "system",
+      "name": "Baking powder",
+      "emoji": "🥄",
+      "categoryId": "cat-pantry",
+      "unitIds": [
+        "unit-pack",
+        "unit-tsp"
+      ],
+      "buyUnitIds": [
+        "unit-pack"
+      ],
+      "cookUnitIds": [
+        "unit-tsp"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-pack",
+          "toUnitId": "unit-tsp",
+          "factor": 20
+        }
+      ]
+    },
+    {
+      "id": "item-salt",
+      "source": "system",
+      "name": "Salt",
+      "emoji": "🧂",
+      "categoryId": "cat-spices",
+      "unitIds": [
+        "unit-pack",
+        "unit-tsp",
+        "unit-pinch",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-pack"
+      ],
+      "cookUnitIds": [
+        "unit-tsp",
+        "unit-pinch",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-pack",
+          "toUnitId": "unit-g",
+          "factor": 500
+        },
+        {
+          "fromUnitId": "unit-tsp",
+          "toUnitId": "unit-g",
+          "factor": 6
+        },
+        {
+          "fromUnitId": "unit-tsp",
+          "toUnitId": "unit-pinch",
+          "factor": 16
+        }
+      ]
+    },
+    {
+      "id": "item-cumin",
+      "source": "system",
+      "name": "Cumin",
+      "emoji": "🌰",
+      "categoryId": "cat-spices",
+      "unitIds": [
+        "unit-pack",
+        "unit-tsp",
+        "unit-tbsp",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-pack"
+      ],
+      "cookUnitIds": [
+        "unit-tsp",
+        "unit-tbsp",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-pack",
+          "toUnitId": "unit-g",
+          "factor": 50
+        },
+        {
+          "fromUnitId": "unit-tsp",
+          "toUnitId": "unit-g",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "item-cinnamon",
+      "source": "system",
+      "name": "Cinnamon",
+      "emoji": "🪵",
+      "categoryId": "cat-spices",
+      "unitIds": [
+        "unit-pack",
+        "unit-tsp",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "unit-pack"
+      ],
+      "cookUnitIds": [
+        "unit-tsp",
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-pack",
+          "toUnitId": "unit-g",
+          "factor": 50
+        },
+        {
+          "fromUnitId": "unit-tsp",
+          "toUnitId": "unit-g",
+          "factor": 2.5
+        }
+      ]
+    },
+    {
+      "id": "item-orange-juice",
+      "source": "system",
+      "name": "Orange juice",
+      "emoji": "🧃",
+      "categoryId": "cat-drinks",
+      "unitIds": [
+        "unit-bottle",
+        "unit-l",
+        "unit-ml",
+        "unit-cup"
+      ],
+      "buyUnitIds": [
+        "unit-bottle",
+        "unit-l"
+      ],
+      "cookUnitIds": [
+        "unit-ml",
+        "unit-cup"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "unit-bottle",
+          "toUnitId": "unit-l",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "item-dish-soap",
+      "source": "system",
+      "name": "Dish soap",
+      "emoji": "🧴",
+      "categoryId": "cat-household",
+      "unitIds": [
+        "unit-bottle"
+      ],
+      "buyUnitIds": [
+        "unit-bottle"
+      ],
+      "cookUnitIds": [],
+      "conversions": [],
+      "hidden": true
+    },
+    {
+      "id": "i-yeast",
+      "name": "Yeast",
+      "emoji": "🍞",
+      "categoryId": "c-baking",
+      "source": "user",
+      "unitIds": [
+        "u-sachet",
+        "unit-g"
+      ],
+      "buyUnitIds": [
+        "u-sachet"
+      ],
+      "cookUnitIds": [
+        "unit-g"
+      ],
+      "conversions": [
+        {
+          "fromUnitId": "u-sachet",
+          "toUnitId": "unit-g",
+          "factor": 7
+        }
+      ]
+    }
+  ],
+  "groceryList": [
+    {
+      "id": "entry-1",
+      "itemId": "item-milk",
+      "unitId": "unit-l",
+      "quantity": 2,
+      "checked": false,
+      "contributions": [
+        {
+          "source": {
+            "type": "manual"
+          },
+          "unitId": "unit-l",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "entry-2",
+      "itemId": "item-eggs",
+      "unitId": "unit-dozen",
+      "quantity": 1,
+      "checked": false
+    },
+    {
+      "id": "entry-3",
+      "itemId": "item-tomatoes",
+      "unitId": "unit-kg",
+      "quantity": 1,
+      "checked": false
+    },
+    {
+      "id": "entry-4",
+      "itemId": "item-yogurt",
+      "unitId": "unit-pack",
+      "quantity": 1,
+      "checked": false
+    },
+    {
+      "id": "entry-5",
+      "itemId": "item-parsley",
+      "unitId": "unit-bunch",
+      "quantity": 1,
+      "checked": false
+    },
+    {
+      "id": "entry-6",
+      "itemId": "item-bread",
+      "unitId": "unit-pack",
+      "quantity": 1,
+      "checked": true
+    },
+    {
+      "id": "e7",
+      "itemId": "i-yeast",
+      "unitId": "u-sachet",
+      "quantity": 2,
+      "checked": false
+    }
+  ],
+  "plannedMeals": [
+    {
+      "id": "m1",
+      "recipeId": "recipe-shakshuka",
+      "servings": 4,
+      "cooked": false
+    },
+    {
+      "id": "m2",
+      "recipeId": "r-bread",
+      "servings": 2,
+      "cooked": true
+    }
+  ],
+  "recipes": [
+    {
+      "id": "recipe-shakshuka",
+      "name": "Shakshuka",
+      "servings": 2,
+      "ingredients": [
+        {
+          "id": "ing-1",
+          "itemId": "item-eggs",
+          "unitId": "unit-piece",
+          "quantity": 4
+        },
+        {
+          "id": "ing-2",
+          "itemId": "item-crushed-tomatoes",
+          "unitId": "unit-can",
+          "quantity": 1
+        },
+        {
+          "id": "ing-3",
+          "itemId": "item-bell-pepper",
+          "unitId": "unit-piece",
+          "quantity": 1
+        },
+        {
+          "id": "ing-4",
+          "itemId": "item-onions",
+          "unitId": "unit-piece",
+          "quantity": 1
+        },
+        {
+          "id": "ing-5",
+          "itemId": "item-garlic",
+          "unitId": "unit-clove",
+          "quantity": 2
+        },
+        {
+          "id": "ing-6",
+          "itemId": "item-cumin",
+          "unitId": "unit-tsp",
+          "quantity": 1
+        },
+        {
+          "id": "ing-7",
+          "itemId": "item-olive-oil",
+          "unitId": "unit-tbsp",
+          "quantity": 2
+        }
+      ],
+      "steps": [
+        "Warm the olive oil in a wide pan and soften the chopped onion and pepper for 5 minutes.",
+        "Stir in the garlic and cumin and cook until fragrant.",
+        "Pour in the crushed tomatoes, season with salt and simmer for 10 minutes.",
+        "Make four little wells and crack an egg into each one.",
+        "Cover and cook gently until the whites are set. Sprinkle with parsley and serve with bread."
+      ]
+    },
+    {
+      "id": "recipe-lentil-soup",
+      "name": "Grandma's Lentil Soup",
+      "servings": 4,
+      "ingredients": [
+        {
+          "id": "ing-8",
+          "itemId": "item-red-lentils",
+          "unitId": "unit-cup",
+          "quantity": 1
+        },
+        {
+          "id": "ing-9",
+          "itemId": "item-onions",
+          "unitId": "unit-piece",
+          "quantity": 1
+        },
+        {
+          "id": "ing-10",
+          "itemId": "item-carrots",
+          "unitId": "unit-piece",
+          "quantity": 2
+        },
+        {
+          "id": "ing-11",
+          "itemId": "item-potatoes",
+          "unitId": "unit-piece",
+          "quantity": 1
+        },
+        {
+          "id": "ing-12",
+          "itemId": "item-cumin",
+          "unitId": "unit-tsp",
+          "quantity": 1
+        },
+        {
+          "id": "ing-13",
+          "itemId": "item-lemons",
+          "unitId": "unit-piece",
+          "quantity": 1
+        },
+        {
+          "id": "ing-14",
+          "itemId": "item-olive-oil",
+          "unitId": "unit-tbsp",
+          "quantity": 2
+        }
+      ],
+      "steps": [
+        "Rinse the lentils until the water runs clear.",
+        "Sauté the onion, carrots and potato in olive oil for a few minutes.",
+        "Add the lentils, cumin and 1 L of water. Simmer for 25 minutes until everything is soft.",
+        "Blend until smooth and squeeze in the lemon juice just before serving."
+      ]
+    },
+    {
+      "id": "recipe-apple-cake",
+      "name": "Apple Cinnamon Cake",
+      "servings": 8,
+      "ingredients": [
+        {
+          "id": "ing-15",
+          "itemId": "item-flour",
+          "unitId": "unit-cup",
+          "quantity": 2
+        },
+        {
+          "id": "ing-16",
+          "itemId": "item-sugar",
+          "unitId": "unit-cup",
+          "quantity": 1
+        },
+        {
+          "id": "ing-17",
+          "itemId": "item-eggs",
+          "unitId": "unit-piece",
+          "quantity": 3
+        },
+        {
+          "id": "ing-18",
+          "itemId": "item-butter",
+          "unitId": "unit-g",
+          "quantity": 125
+        },
+        {
+          "id": "ing-19",
+          "itemId": "item-milk",
+          "unitId": "unit-ml",
+          "quantity": 120
+        },
+        {
+          "id": "ing-20",
+          "itemId": "item-apples",
+          "unitId": "unit-piece",
+          "quantity": 3
+        },
+        {
+          "id": "ing-21",
+          "itemId": "item-cinnamon",
+          "unitId": "unit-tsp",
+          "quantity": 1
+        },
+        {
+          "id": "ing-22",
+          "itemId": "item-baking-powder",
+          "unitId": "unit-tsp",
+          "quantity": 2
+        }
+      ],
+      "steps": [
+        "Heat the oven to 180°C and butter a round cake tin.",
+        "Beat the soft butter and sugar until pale, then beat in the eggs one at a time.",
+        "Fold in the flour, baking powder and cinnamon, then the milk.",
+        "Peel and slice the apples and fold half of them into the batter.",
+        "Pour into the tin, arrange the remaining apple slices on top and bake for 45 minutes."
+      ]
+    },
+    {
+      "id": "r-bread",
+      "name": "Bread",
+      "servings": 1,
+      "imageUri": "file:///photos/bread.jpg",
+      "ingredients": [
+        {
+          "id": "x1",
+          "itemId": "i-yeast",
+          "unitId": "unit-g",
+          "quantity": 7
+        }
+      ],
+      "steps": [
+        "Knead.",
+        "Bake."
+      ]
+    }
+  ]
+}

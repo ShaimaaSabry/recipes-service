@@ -89,6 +89,27 @@ it, then click **Authorize** and enter `Bearer <accessToken>`. It doesn't exist 
     (1 bottle); 1500 g on an item bought in kg becomes 1.5 kg.
   - `testdata/grocery_list_cases.json` has the shared cases for the app's preview.
 
+## Importing what the app kept on the phone
+
+Before accounts, the app stored everything on the phone. After the first sign-in, it sends that
+data once with `POST /v1/imports`: an `importId` it makes and keeps, and its stored data as it is
+(data version 4).
+
+- Starter categories and items are matched to the account's copies by their seed IDs
+  (`item-garlic` is `garlic`), and take on the local renames, units, conversions and hidden flags.
+  The user's own are matched by name, or created.
+- Units the service doesn't have become `piece`. Units are added to an item where a recipe or the
+  list needs them, and never taken away while something uses them.
+- Recipes are created. Meals not yet cooked are planned; cooked ones are dropped. Grocery lines
+  join the list; an item already on it gets the amount added.
+- Anything that can't be kept as it is is fixed or left out and listed in `notes`, to show the
+  user. It all happens in one transaction, or none of it does.
+- Resending the same `importId` returns the first result, with `imported: false`.
+- The app then uploads each recipe's photo to its new ID (`recipeIds` maps old to new), and only
+  then deletes its local data. Until then it keeps the data and tries again on the next launch.
+- `internal/recipes/testdata/local_data_v4.json` is the app's seed data plus a user's changes,
+  made from the app's `src/data/seed.ts`.
+
 ## Environments
 
 The same build runs everywhere; only environment variables differ (see `.env.example`).

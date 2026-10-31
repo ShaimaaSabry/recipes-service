@@ -267,6 +267,38 @@ definitions:
     required:
     - hidden
     type: object
+  api.importDTO:
+    properties:
+      imported:
+        description: Imported is false when this import was done before; the result
+          is the first one's.
+        type: boolean
+      notes:
+        description: Notes say what the import had to change or leave out, to show
+          the user.
+        items:
+          type: string
+        type: array
+      recipeIds:
+        additionalProperties:
+          type: string
+        description: 'RecipeIDs maps each local recipe ID to its new ID: upload each
+          recipe''s photo to it.'
+        type: object
+    type: object
+  api.importRequest:
+    properties:
+      data:
+        $ref: '#/definitions/api.localDataDTO'
+      importId:
+        description: |-
+          ImportID is made by the app once and kept until the import is done, so a resend is
+          recognised.
+        type: string
+    required:
+    - data
+    - importId
+    type: object
   api.ingredientDTO:
     properties:
       itemId:
@@ -311,6 +343,156 @@ definitions:
         enum:
         - system
         - user
+        type: string
+    type: object
+  api.localCategoryDTO:
+    properties:
+      emoji:
+        type: string
+      hidden:
+        type: boolean
+      id:
+        type: string
+      name:
+        type: string
+      source:
+        enum:
+        - system
+        - user
+        type: string
+    type: object
+  api.localConversionDTO:
+    properties:
+      factor:
+        type: number
+      fromUnitId:
+        type: string
+      toUnitId:
+        type: string
+    type: object
+  api.localDataDTO:
+    properties:
+      categories:
+        items:
+          $ref: '#/definitions/api.localCategoryDTO'
+        maxItems: 1000
+        type: array
+      groceryList:
+        items:
+          $ref: '#/definitions/api.localLineDTO'
+        maxItems: 5000
+        type: array
+      items:
+        items:
+          $ref: '#/definitions/api.localItemDTO'
+        maxItems: 5000
+        type: array
+      plannedMeals:
+        items:
+          $ref: '#/definitions/api.localMealDTO'
+        maxItems: 1000
+        type: array
+      recipes:
+        items:
+          $ref: '#/definitions/api.localRecipeDTO'
+        maxItems: 5000
+        type: array
+      units:
+        items:
+          $ref: '#/definitions/api.localUnitDTO'
+        maxItems: 1000
+        type: array
+      version:
+        description: Version is the app's data version; the app migrates its data
+          to 4 before sending it.
+        enum:
+        - 4
+        example: 4
+        type: integer
+    required:
+    - version
+    type: object
+  api.localIngredientDTO:
+    properties:
+      itemId:
+        type: string
+      quantity:
+        type: number
+      unitId:
+        type: string
+    type: object
+  api.localItemDTO:
+    properties:
+      buyUnitIds:
+        items:
+          type: string
+        type: array
+      categoryId:
+        type: string
+      conversions:
+        items:
+          $ref: '#/definitions/api.localConversionDTO'
+        type: array
+      cookUnitIds:
+        items:
+          type: string
+        type: array
+      emoji:
+        type: string
+      hidden:
+        type: boolean
+      id:
+        type: string
+      name:
+        type: string
+      source:
+        enum:
+        - system
+        - user
+        type: string
+    type: object
+  api.localLineDTO:
+    properties:
+      checked:
+        type: boolean
+      itemId:
+        type: string
+      quantity:
+        type: number
+      unitId:
+        type: string
+    type: object
+  api.localMealDTO:
+    properties:
+      cooked:
+        type: boolean
+      recipeId:
+        type: string
+      servings:
+        type: integer
+    type: object
+  api.localRecipeDTO:
+    properties:
+      id:
+        type: string
+      ingredients:
+        items:
+          $ref: '#/definitions/api.localIngredientDTO'
+        type: array
+      name:
+        type: string
+      servings:
+        type: integer
+      steps:
+        items:
+          type: string
+        type: array
+    type: object
+  api.localUnitDTO:
+    properties:
+      id:
+        type: string
+      name:
         type: string
     type: object
   api.mealDTO:
@@ -882,6 +1064,45 @@ paths:
       summary: Change the grocery list
       tags:
       - grocery list
+  /imports:
+    post:
+      description: |-
+        Sent once, after the first sign-in, with the app's stored data as it is (data
+        version 4). Starter categories and items are matched to the account's copies by
+        their seed IDs ("item-garlic") and take on the local changes; the user's own are
+        matched by name or created. Units the service doesn't have become "piece".
+        Recipes are created, meals not yet cooked are planned, and grocery lines join the
+        list. Anything that can't be kept as it is is changed or left out, and listed in
+        notes. It all happens or none of it does. Resending the same importId returns the
+        first import's result with imported false. Afterwards, upload each recipe's photo
+        to its new ID from recipeIds, then delete the local data.
+      parameters:
+      - description: The import's ID and the app's stored data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.importRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.importDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Import the data the app kept on the phone
+      tags:
+      - imports
   /items:
     post:
       description: |-

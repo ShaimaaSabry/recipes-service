@@ -559,6 +559,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/imports": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Sent once, after the first sign-in, with the app's stored data as it is (data\nversion 4). Starter categories and items are matched to the account's copies by\ntheir seed IDs (\"item-garlic\") and take on the local changes; the user's own are\nmatched by name or created. Units the service doesn't have become \"piece\".\nRecipes are created, meals not yet cooked are planned, and grocery lines join the\nlist. Anything that can't be kept as it is is changed or left out, and listed in\nnotes. It all happens or none of it does. Resending the same importId returns the\nfirst import's result with imported false. Afterwards, upload each recipe's photo\nto its new ID from recipeIds, then delete the local data.",
+                "tags": [
+                    "imports"
+                ],
+                "summary": "Import the data the app kept on the phone",
+                "parameters": [
+                    {
+                        "description": "The import's ID and the app's stored data",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.importRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.importDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/items": {
             "post": {
                 "security": [
@@ -1820,6 +1867,45 @@ const docTemplate = `{
                 }
             }
         },
+        "api.importDTO": {
+            "type": "object",
+            "properties": {
+                "imported": {
+                    "description": "Imported is false when this import was done before; the result is the first one's.",
+                    "type": "boolean"
+                },
+                "notes": {
+                    "description": "Notes say what the import had to change or leave out, to show the user.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "recipeIds": {
+                    "description": "RecipeIDs maps each local recipe ID to its new ID: upload each recipe's photo to it.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api.importRequest": {
+            "type": "object",
+            "required": [
+                "data",
+                "importId"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api.localDataDTO"
+                },
+                "importId": {
+                    "description": "ImportID is made by the app once and kept until the import is done, so a resend is\nrecognised.",
+                    "type": "string"
+                }
+            }
+        },
         "api.ingredientDTO": {
             "type": "object",
             "required": [
@@ -1884,6 +1970,229 @@ const docTemplate = `{
                         "system",
                         "user"
                     ]
+                }
+            }
+        },
+        "api.localCategoryDTO": {
+            "type": "object",
+            "properties": {
+                "emoji": {
+                    "type": "string"
+                },
+                "hidden": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "system",
+                        "user"
+                    ]
+                }
+            }
+        },
+        "api.localConversionDTO": {
+            "type": "object",
+            "properties": {
+                "factor": {
+                    "type": "number"
+                },
+                "fromUnitId": {
+                    "type": "string"
+                },
+                "toUnitId": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.localDataDTO": {
+            "type": "object",
+            "required": [
+                "version"
+            ],
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "items": {
+                        "$ref": "#/definitions/api.localCategoryDTO"
+                    }
+                },
+                "groceryList": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "items": {
+                        "$ref": "#/definitions/api.localLineDTO"
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "items": {
+                        "$ref": "#/definitions/api.localItemDTO"
+                    }
+                },
+                "plannedMeals": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "items": {
+                        "$ref": "#/definitions/api.localMealDTO"
+                    }
+                },
+                "recipes": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "items": {
+                        "$ref": "#/definitions/api.localRecipeDTO"
+                    }
+                },
+                "units": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "items": {
+                        "$ref": "#/definitions/api.localUnitDTO"
+                    }
+                },
+                "version": {
+                    "description": "Version is the app's data version; the app migrates its data to 4 before sending it.",
+                    "type": "integer",
+                    "enum": [
+                        4
+                    ],
+                    "example": 4
+                }
+            }
+        },
+        "api.localIngredientDTO": {
+            "type": "object",
+            "properties": {
+                "itemId": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "unitId": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.localItemDTO": {
+            "type": "object",
+            "properties": {
+                "buyUnitIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "categoryId": {
+                    "type": "string"
+                },
+                "conversions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.localConversionDTO"
+                    }
+                },
+                "cookUnitIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "emoji": {
+                    "type": "string"
+                },
+                "hidden": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "system",
+                        "user"
+                    ]
+                }
+            }
+        },
+        "api.localLineDTO": {
+            "type": "object",
+            "properties": {
+                "checked": {
+                    "type": "boolean"
+                },
+                "itemId": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "unitId": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.localMealDTO": {
+            "type": "object",
+            "properties": {
+                "cooked": {
+                    "type": "boolean"
+                },
+                "recipeId": {
+                    "type": "string"
+                },
+                "servings": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.localRecipeDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "ingredients": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.localIngredientDTO"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "servings": {
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api.localUnitDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },

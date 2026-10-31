@@ -68,3 +68,12 @@ type appliedActionDBO struct {
 }
 
 func (appliedActionDBO) TableName() string { return "applied_actions" }
+
+type localImportDBO struct {
+	OwnerID    string    `gorm:"primaryKey"`
+	ImportID   uuid.UUID `gorm:"primaryKey"`
+	Result     *string
+	ImportedAt time.Time
+}
+
+func (localImportDBO) TableName() string { return "local_imports" }

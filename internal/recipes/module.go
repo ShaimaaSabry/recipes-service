@@ -28,6 +28,7 @@ import (
 	"github.com/mamienellie/recipes-service/internal/recipes/application/getrecipes"
 	"github.com/mamienellie/recipes-service/internal/recipes/application/hidecategory"
 	"github.com/mamienellie/recipes-service/internal/recipes/application/hideitem"
+	"github.com/mamienellie/recipes-service/internal/recipes/application/importlocaldata"
 	"github.com/mamienellie/recipes-service/internal/recipes/application/planmeal"
 	"github.com/mamienellie/recipes-service/internal/recipes/application/removemeal"
 	"github.com/mamienellie/recipes-service/internal/recipes/application/removephoto"
@@ -63,6 +64,7 @@ type Module struct {
 	recipeController  *api.RecipeController
 	catalogController *api.CatalogController
 	menuController    *api.MenuController
+	importController  *api.ImportController
 }
 
 func New(db *gorm.DB, settings Settings) (*Module, error) {
@@ -109,6 +111,7 @@ func New(db *gorm.DB, settings Settings) (*Module, error) {
 			GetGroceryList:      getgrocerylist.NewInteractor(groceryList),
 			ApplyGroceryActions: applygroceryactions.NewInteractor(groceryList),
 		}),
+		importController: api.NewImportController(importlocaldata.NewInteractor(sql.NewLocalImportSqlRepository(db))),
 	}, nil
 }
 
@@ -141,4 +144,5 @@ func (m *Module) RegisterRoutes(r gin.IRouter) {
 	m.recipeController.RegisterRoutes(r)
 	m.catalogController.RegisterRoutes(r)
 	m.menuController.RegisterRoutes(r)
+	m.importController.RegisterRoutes(r)
 }
