@@ -14,4 +14,6 @@ var (
 	// ErrUnauthorized means the request doesn't prove who it's from, e.g. a missing or expired
 	// token (401).
 	ErrUnauthorized = errors.New("unauthorized")
+	// ErrUnavailable means a feature isn't set up where the service is running (503).
+	ErrUnavailable = errors.New("unavailable")
 )

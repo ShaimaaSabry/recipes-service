@@ -1,5 +1,5 @@
 // Package deleteitem is the use case for deleting one of the owner's own grocery items. Starter
-// items can only be hidden.
+// items can only be hidden, and an item can't go while a recipe or the grocery list uses it.
 package deleteitem
 
 import (
@@ -13,6 +13,7 @@ import (
 
 type itemRepository interface {
 	FindItem(ctx context.Context, owner owner.ID, id uuid.UUID) (*model.GroceryItem, error)
+	ItemUsage(ctx context.Context, owner owner.ID, itemID uuid.UUID) (model.ItemUsage, error)
 	DeleteItem(ctx context.Context, owner owner.ID, id uuid.UUID) error
 }
 
@@ -39,6 +40,13 @@ func (i *Interactor) Execute(ctx context.Context, command Command) error {
 	}
 	if err := item.CanDelete(); err != nil {
 		return err
+	}
+	usage, err := i.itemRepository.ItemUsage(ctx, command.Owner, item.ID())
+	if err != nil {
+		return err
+	}
+	if usage.InUse() {
+		return model.ErrItemInUse
 	}
 	return i.itemRepository.DeleteItem(ctx, command.Owner, command.ID)
 }

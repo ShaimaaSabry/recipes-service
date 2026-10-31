@@ -62,6 +62,33 @@ it, then click **Authorize** and enter `Bearer <accessToken>`. It doesn't exist 
   `internal/recipes/domain/model/testdata/conversion_cases.json` holds the cases both must agree on;
   the Go tests run them, and the app's tests should too.
 
+## Recipes, the menu and the grocery list
+
+- **Recipes** have servings (1 to 99), ingredients and steps. An ingredient is one of the account's
+  items, in a unit it's cooked in (or bought in, for something nobody cooks with).
+  `GET /v1/recipes/{id}?servings=4` scales the amounts. An item a recipe uses can't be deleted, or
+  lose that unit.
+- **Photos** go straight from the app to S3: `POST /v1/recipes/{id}/photo/upload` returns a
+  15-minute upload link, the app `PUT`s the image to it, then attaches it with
+  `PUT /v1/recipes/{id}/photo`. The service then checks it's there, an image, and at most 10 MB.
+  CloudFront serves it at `photoUrl`. Without `PHOTOS_BUCKET` (locally, by default), uploads answer
+  `503`.
+- **The upcoming menu** is planned meals: a recipe for a number of people. The app makes each meal's
+  ID, so it can plan offline: `PUT /v1/meals/{id}` plans or updates a meal, and
+  `DELETE /v1/meals/{id}` removes it. Both are safe to repeat. Removing a meal leaves the grocery
+  list alone; deleting a recipe removes its meals.
+- **The grocery list** has one line per item, named by item. The app changes it with
+  `POST /v1/grocery-list/actions`: `add`, `setQuantity`, `setUnit`, `check`, `uncheck`, `remove`
+  and `clearChecked`. Offline, the app queues these and previews the result with the same rules,
+  then sends the queue.
+  - Each action has an ID made by the app. A resent one is recognised (`alreadyApplied`) and not
+    applied twice.
+  - A refused one (`rejected`) changes nothing and can be sent again. `missingConversion` names the
+    conversion to ask the user for.
+  - A line keeps its exact amount (0.04 bottle). `buyQuantity` rounds it up for units sold whole
+    (1 bottle); 1500 g on an item bought in kg becomes 1.5 kg.
+  - `testdata/grocery_list_cases.json` has the shared cases for the app's preview.
+
 ## Environments
 
 The same build runs everywhere; only environment variables differ (see `.env.example`).
@@ -72,6 +99,7 @@ The same build runs everywhere; only environment variables differ (see `.env.exa
 | `DATABASE_URL` | Postgres in Docker Compose | RDS |
 | `JWT_SIGNING_KEY` | any 32+ characters | Secrets Manager (`mamie-nellie-auth`) |
 | `APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS` | empty (use `/v1/auth/dev`) | the app's bundle ID and Google client IDs |
+| `PHOTOS_BUCKET`, `PHOTOS_URL` | empty (no photos) | the photos bucket and its CloudFront address (set by Terraform) |
 | Logs | text, with SQL | JSON |
 | Swagger UI | http://localhost:8080/swagger/index.html | off |
 
@@ -84,6 +112,9 @@ workflow, the `mamie-nellie` cost tags and the setup steps.
 cp .env.example .env.local   # once
 make run                     # starts Postgres in Docker, then the server on :8080
 ```
+
+Until the first deploy, migrations may still be edited in place. If startup then fails with a
+migration error, reset the local database: `docker compose down -v && make run`.
 
 ## Tests & linting
 

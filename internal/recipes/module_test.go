@@ -14,13 +14,14 @@ import (
 
 	"github.com/mamienellie/recipes-service/internal/platform/database/databasetest"
 	"github.com/mamienellie/recipes-service/internal/platform/httpserver"
+	"github.com/mamienellie/recipes-service/internal/recipes/infrastructure/photostorage"
 	"github.com/mamienellie/recipes-service/internal/shared/owner"
 )
 
 // newServer runs the module on a real database. The access token is simply the owner's ID.
 func newServer(t *testing.T) (*gin.Engine, *Module) {
 	ctx := context.Background()
-	module, err := New(databasetest.New(t))
+	module, err := New(databasetest.New(t), Settings{Photos: photostorage.Disabled{}})
 	require.NoError(t, err)
 	require.NoError(t, module.Migrate(ctx))
 

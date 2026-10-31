@@ -32,6 +32,10 @@ type Config struct {
 	// GoogleClientIDs are the app's Google OAuth client IDs (iOS, Android, web) that Google
 	// Sign-In tokens must be issued for.
 	GoogleClientIDs []string
+	// PhotosBucket is the S3 bucket recipe photos are uploaded to, and PhotosURL the CloudFront
+	// address they're served from. Locally both may be empty: photo uploads are then refused.
+	PhotosBucket string
+	PhotosURL    string
 }
 
 // IsLocal reports whether the service is running on a developer's machine.
@@ -47,6 +51,8 @@ func Load(getenv func(string) string) (Config, error) {
 		JWTSigningKey:   strings.TrimSpace(getenv("JWT_SIGNING_KEY")),
 		AppleClientIDs:  list(getenv("APPLE_CLIENT_IDS")),
 		GoogleClientIDs: list(getenv("GOOGLE_CLIENT_IDS")),
+		PhotosBucket:    strings.TrimSpace(getenv("PHOTOS_BUCKET")),
+		PhotosURL:       strings.TrimSpace(getenv("PHOTOS_URL")),
 	}
 	if cfg.Port == "" {
 		cfg.Port = "8080"
@@ -68,6 +74,12 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if cfg.Env == EnvProd && len(cfg.GoogleClientIDs) == 0 {
 		problems = append(problems, errors.New("GOOGLE_CLIENT_IDS is required in prod"))
+	}
+	if cfg.Env == EnvProd && cfg.PhotosBucket == "" {
+		problems = append(problems, errors.New("PHOTOS_BUCKET is required in prod"))
+	}
+	if (cfg.PhotosBucket == "") != (cfg.PhotosURL == "") {
+		problems = append(problems, errors.New("PHOTOS_BUCKET and PHOTOS_URL go together: set both or neither"))
 	}
 	if len(problems) > 0 {
 		return Config{}, fmt.Errorf("invalid config: %w", errors.Join(problems...))

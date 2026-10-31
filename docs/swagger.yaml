@@ -13,6 +13,13 @@ definitions:
     required:
     - idToken
     type: object
+  api.attachPhotoRequest:
+    properties:
+      photoKey:
+        type: string
+    required:
+    - photoKey
+    type: object
   api.catalogDTO:
     properties:
       categories:
@@ -103,18 +110,6 @@ definitions:
     - emoji
     - name
     type: object
-  api.createRecipeRequest:
-    properties:
-      id:
-        description: ID is optional; the app sends the one it created, possibly while
-          offline.
-        maxLength: 64
-        type: string
-      name:
-        type: string
-    required:
-    - name
-    type: object
   api.devSignInRequest:
     properties:
       name:
@@ -165,6 +160,103 @@ definitions:
     required:
     - idToken
     type: object
+  api.groceryActionDTO:
+    properties:
+      id:
+        description: 'ID is made by the app, once per action: resending the same action
+          is then harmless.'
+        type: string
+      itemId:
+        description: ItemID names the line, for every type but clearChecked.
+        type: string
+      quantity:
+        description: Quantity is the amount for add and setQuantity.
+        example: 2
+        type: number
+      type:
+        enum:
+        - add
+        - setQuantity
+        - setUnit
+        - check
+        - uncheck
+        - remove
+        - clearChecked
+        example: add
+        type: string
+      unitId:
+        description: UnitID is the amount's unit for add, and the new unit for setUnit.
+        type: string
+    required:
+    - id
+    - type
+    type: object
+  api.groceryActionResultDTO:
+    properties:
+      error:
+        description: Error says why a rejected action was refused.
+        type: string
+      id:
+        type: string
+      missingConversion:
+        allOf:
+        - $ref: '#/definitions/api.missingConversionDTO'
+        description: MissingConversion is set when the action needs a conversion the
+          item doesn't have yet.
+      outcome:
+        enum:
+        - applied
+        - alreadyApplied
+        - rejected
+        type: string
+    type: object
+  api.groceryActionsDTO:
+    properties:
+      lines:
+        description: Lines is the list after the actions; it replaces the app's preview.
+        items:
+          $ref: '#/definitions/api.groceryLineDTO'
+        type: array
+      results:
+        items:
+          $ref: '#/definitions/api.groceryActionResultDTO'
+        type: array
+    type: object
+  api.groceryActionsRequest:
+    properties:
+      actions:
+        items:
+          $ref: '#/definitions/api.groceryActionDTO'
+        maxItems: 200
+        type: array
+    required:
+    - actions
+    type: object
+  api.groceryLineDTO:
+    properties:
+      buyQuantity:
+        example: 1
+        type: number
+      checked:
+        type: boolean
+      itemId:
+        type: string
+      quantity:
+        description: |-
+          Quantity is exact (0.04 after 2 tbsp of oil); BuyQuantity is what to show, rounded up to
+          whole numbers for units sold whole (1 bottle).
+        example: 0.04
+        type: number
+      unitId:
+        type: string
+    type: object
+  api.groceryListDTO:
+    properties:
+      lines:
+        items:
+          $ref: '#/definitions/api.groceryLineDTO'
+        type: array
+    type: object
   api.hiddenRequest:
     properties:
       hidden:
@@ -174,6 +266,20 @@ definitions:
         type: boolean
     required:
     - hidden
+    type: object
+  api.ingredientDTO:
+    properties:
+      itemId:
+        type: string
+      quantity:
+        example: 2
+        type: number
+      unitId:
+        type: string
+    required:
+    - itemId
+    - quantity
+    - unitId
     type: object
   api.itemDTO:
     properties:
@@ -207,12 +313,120 @@ definitions:
         - user
         type: string
     type: object
+  api.mealDTO:
+    properties:
+      id:
+        type: string
+      plannedAt:
+        type: string
+      recipeId:
+        type: string
+      servings:
+        example: 4
+        type: integer
+    type: object
+  api.missingConversionDTO:
+    properties:
+      fromUnitId:
+        description: Ask the user "1 fromUnit = ? toUnit", then save it with POST
+          /items/{id}/conversions.
+        type: string
+      itemId:
+        type: string
+      toUnitId:
+        type: string
+    type: object
+  api.photoUploadDTO:
+    properties:
+      expiresAt:
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        type: object
+      method:
+        example: PUT
+        type: string
+      photoKey:
+        description: PhotoKey is what to attach to the recipe once the upload is done.
+        type: string
+      uploadUrl:
+        description: Upload the image with this method, URL and headers (the body
+          is the image itself).
+        type: string
+    type: object
+  api.photoUploadRequest:
+    properties:
+      contentType:
+        enum:
+        - image/jpeg
+        - image/png
+        - image/heic
+        - image/webp
+        example: image/jpeg
+        type: string
+    required:
+    - contentType
+    type: object
+  api.planMealRequest:
+    properties:
+      recipeId:
+        type: string
+      servings:
+        example: 4
+        maximum: 99
+        minimum: 1
+        type: integer
+    required:
+    - recipeId
+    - servings
+    type: object
   api.recipeDTO:
     properties:
       id:
         type: string
+      ingredients:
+        items:
+          $ref: '#/definitions/api.ingredientDTO'
+        type: array
       name:
+        example: Shakshuka
         type: string
+      photoUrl:
+        description: PhotoURL is where the photo is served from, or null.
+        type: string
+      servings:
+        example: 2
+        type: integer
+      steps:
+        items:
+          type: string
+        type: array
+    type: object
+  api.recipeRequest:
+    properties:
+      ingredients:
+        items:
+          $ref: '#/definitions/api.ingredientDTO'
+        type: array
+      name:
+        example: Shakshuka
+        type: string
+      servings:
+        description: Servings is how many people the ingredient amounts are for.
+        example: 2
+        maximum: 99
+        minimum: 1
+        type: integer
+      steps:
+        example:
+        - Warm the olive oil in a wide pan.
+        items:
+          type: string
+        type: array
+    required:
+    - name
+    - servings
     type: object
   api.refreshTokenRequest:
     properties:
@@ -608,6 +822,66 @@ paths:
       summary: Hide or show a category
       tags:
       - catalog
+  /grocery-list:
+    get:
+      description: One line per item, in the order lines were first added.
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.groceryListDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get the grocery list
+      tags:
+      - grocery list
+  /grocery-list/actions:
+    post:
+      description: |-
+        Applies the actions in order, each on its own, and returns what happened to each
+        and the list after them. Lines are named by item:
+        - add {itemId, unitId, quantity}: onto the item's line, converted into its unit
+        - setQuantity {itemId, quantity}: the amount, by hand, in the line's unit
+        - setUnit {itemId, unitId}: another unit the item is bought in, converting the amount
+        - check / uncheck / remove {itemId}, and clearChecked
+
+        Every action has an ID the app makes once. Resending an action already applied
+        changes nothing (outcome alreadyApplied), so after a dropped connection the app
+        just sends its queue again. A rejected action changed nothing and can be sent again
+        once fixed: missingConversion says which conversion to ask the user for. Up to 200
+        actions per request.
+      parameters:
+      - description: The actions, in order
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.groceryActionsRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.groceryActionsDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change the grocery list
+      tags:
+      - grocery list
   /items:
     post:
       description: |-
@@ -839,8 +1113,98 @@ paths:
       summary: The signed-in account
       tags:
       - account
+  /meals:
+    get:
+      description: The planned meals, in the order they were planned.
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.mealDTO'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get the upcoming menu
+      tags:
+      - menu
+  /meals/{id}:
+    delete:
+      description: The grocery list is left as it is. Removing a meal that's already
+        gone succeeds.
+      parameters:
+      - description: Meal ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Not a UUID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Take a meal off the menu
+      tags:
+      - menu
+    put:
+      description: |-
+        The app makes the meal's ID (a UUID), so it can plan meals offline and send them
+        later. Sending the same meal again just saves it again.
+      parameters:
+      - description: Meal ID, made by the app
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The recipe and number of people
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.planMealRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.mealDTO'
+        "400":
+          description: Not a UUID, or not one of the account's recipes
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Another account's meal has this ID
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Plan a meal, or change one
+      tags:
+      - menu
   /recipes:
     get:
+      description: By name, each with its ingredients and steps.
       responses:
         "200":
           description: OK
@@ -859,13 +1223,16 @@ paths:
       tags:
       - recipes
     post:
+      description: |-
+        Each ingredient is one of the account's grocery items, in a unit it's cooked in (or,
+        for an item nobody cooks with, one it's bought in).
       parameters:
-      - description: Create recipe payload
+      - description: The recipe
         in: body
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/api.createRecipeRequest'
+          $ref: '#/definitions/api.recipeRequest'
       responses:
         "201":
           description: Created
@@ -881,14 +1248,232 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "409":
-          description: Conflict
+      security:
+      - BearerAuth: []
+      summary: Create a recipe
+      tags:
+      - recipes
+  /recipes/{id}:
+    delete:
+      description: Its planned meals and photo go with it. What it added to the grocery
+        list stays.
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
           schema:
             additionalProperties: true
             type: object
       security:
       - BearerAuth: []
-      summary: Create a recipe
+      summary: Delete a recipe
+      tags:
+      - recipes
+    get:
+      description: Pass servings to get the ingredient amounts for that many people.
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Scale the ingredients to this many people (1 to 99)
+        in: query
+        name: servings
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.recipeDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a recipe
+      tags:
+      - recipes
+    put:
+      description: Replaces its name, servings, ingredients and steps. The photo stays.
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The recipe
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.recipeRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.recipeDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change a recipe
+      tags:
+      - recipes
+  /recipes/{id}/photo:
+    delete:
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.recipeDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove a recipe's photo
+      tags:
+      - recipes
+    put:
+      description: The previous photo is deleted.
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The photoKey from the upload link
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.attachPhotoRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.recipeDTO'
+        "400":
+          description: Not uploaded, too large, or not an image
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Photos aren't set up where the service runs
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Set a recipe's photo to one just uploaded
+      tags:
+      - recipes
+  /recipes/{id}/photo/upload:
+    post:
+      description: |-
+        Upload the image itself with the returned method, URL and headers, within 15
+        minutes, then attach it with PUT /recipes/{id}/photo. Photos up to 10 MB.
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The photo's type
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.photoUploadRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.photoUploadDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Photos aren't set up where the service runs
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a link to upload a recipe photo to
       tags:
       - recipes
 securityDefinitions:

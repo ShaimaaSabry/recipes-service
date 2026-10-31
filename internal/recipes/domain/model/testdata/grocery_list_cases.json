@@ -1,0 +1,91 @@
+{
+  "about": "Adding amounts to an item's one grocery line. Each case starts with no line and applies `steps` in order: [\"add\", quantity, unit] or [\"check\"]. `expect` is the line after them: its unit, exact quantity and the quantity to buy (rounded up for units sold whole), or `missing`, the conversion the last add needs: [from, to], asked as \"1 from = ? to\". Both the service (Go) and the app (TypeScript) run these cases. Compare quantities with a tolerance of 1e-9.",
+  "units": [
+    { "code": "piece", "base": "piece", "baseSize": 1, "soldWhole": true },
+    { "code": "dozen", "base": "piece", "baseSize": 12, "soldWhole": true },
+    { "code": "kg", "base": "g", "baseSize": 1000, "soldWhole": false },
+    { "code": "g", "base": "g", "baseSize": 1, "soldWhole": false },
+    { "code": "l", "base": "ml", "baseSize": 1000, "soldWhole": false },
+    { "code": "ml", "base": "ml", "baseSize": 1, "soldWhole": false },
+    { "code": "pack", "soldWhole": true },
+    { "code": "box", "soldWhole": true },
+    { "code": "bottle", "soldWhole": true },
+    { "code": "tbsp", "base": "ml", "baseSize": 15, "soldWhole": false },
+    { "code": "clove", "soldWhole": true },
+    { "code": "head", "soldWhole": true }
+  ],
+  "cases": [
+    {
+      "name": "olive oil: 2 tbsp is 1 bottle to buy",
+      "item": { "buy": ["bottle"], "conversions": [["bottle", "ml", 750]] },
+      "steps": [["add", 2, "tbsp"]],
+      "expect": { "unit": "bottle", "quantity": 0.04, "buyQuantity": 1 }
+    },
+    {
+      "name": "butter: 250 g is 2 packs to buy",
+      "item": { "buy": ["pack"], "conversions": [["pack", "g", 200]] },
+      "steps": [["add", 250, "g"]],
+      "expect": { "unit": "pack", "quantity": 1.25, "buyQuantity": 2 }
+    },
+    {
+      "name": "butter: amounts add up on one line",
+      "item": { "buy": ["pack"], "conversions": [["pack", "g", 200]] },
+      "steps": [["add", 100, "g"], ["add", 1, "pack"], ["add", 100, "g"]],
+      "expect": { "unit": "pack", "quantity": 2, "buyQuantity": 2 }
+    },
+    {
+      "name": "potatoes: weights aren't rounded up",
+      "item": { "buy": ["kg"], "conversions": [["piece", "g", 200]] },
+      "steps": [["add", 300, "g"], ["add", 5, "piece"]],
+      "expect": { "unit": "kg", "quantity": 1.3, "buyQuantity": 1.3 }
+    },
+    {
+      "name": "ground beef: 1500 g becomes 1.5 kg",
+      "item": { "buy": ["kg", "g"], "conversions": [] },
+      "steps": [["add", 700, "g"], ["add", 800, "g"]],
+      "expect": { "unit": "kg", "quantity": 1.5, "buyQuantity": 1.5 }
+    },
+    {
+      "name": "ground beef: under 1000 g stays in g",
+      "item": { "buy": ["kg", "g"], "conversions": [] },
+      "steps": [["add", 999, "g"]],
+      "expect": { "unit": "g", "quantity": 999, "buyQuantity": 999 }
+    },
+    {
+      "name": "eggs: a new line keeps the unit it's bought in",
+      "item": { "buy": ["dozen", "piece"], "conversions": [] },
+      "steps": [["add", 3, "piece"], ["add", 1, "dozen"]],
+      "expect": { "unit": "piece", "quantity": 15, "buyQuantity": 15 }
+    },
+    {
+      "name": "eggs: a bought line starts again with only the new amount",
+      "item": { "buy": ["dozen", "piece"], "conversions": [] },
+      "steps": [["add", 1, "dozen"], ["check"], ["add", 4, "piece"]],
+      "expect": { "unit": "piece", "quantity": 4, "buyQuantity": 4 }
+    },
+    {
+      "name": "garlic: cloves into heads",
+      "item": { "buy": ["head", "g"], "conversions": [["head", "clove", 10], ["clove", "g", 5]] },
+      "steps": [["add", 2, "head"], ["add", 3, "clove"]],
+      "expect": { "unit": "head", "quantity": 2.3, "buyQuantity": 3 }
+    },
+    {
+      "name": "a conversion just under a whole number still rounds to it",
+      "item": { "buy": ["bottle"], "conversions": [["bottle", "ml", 750]] },
+      "steps": [["add", 50, "tbsp"], ["add", 50, "tbsp"], ["add", 50, "tbsp"]],
+      "expect": { "unit": "bottle", "quantity": 3, "buyQuantity": 3 }
+    },
+    {
+      "name": "eggs: a box needs a conversion first",
+      "item": { "buy": ["piece"], "conversions": [] },
+      "steps": [["add", 6, "piece"], ["add", 1, "box"]],
+      "expect": { "missing": ["box", "piece"] }
+    },
+    {
+      "name": "the question puts the unit without a size first",
+      "item": { "buy": ["box"], "conversions": [] },
+      "steps": [["add", 6, "piece"]],
+      "expect": { "missing": ["box", "piece"] }
+    }
+  ]
+}

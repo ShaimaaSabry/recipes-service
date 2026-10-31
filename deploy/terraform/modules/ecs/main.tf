@@ -53,7 +53,8 @@ resource "aws_iam_role_policy" "execution_secrets" {
 }
 
 # ---------------------------------------------------------------------------
-# Task role: what the running service itself may do (read and write photos).
+# Task role: what the running service itself may do: sign photo upload links,
+# check and delete photos, and list an account's photos to delete them with it.
 # ---------------------------------------------------------------------------
 resource "aws_iam_role" "task" {
   name        = "${local.name}-ecs-task-role"
@@ -77,12 +78,23 @@ resource "aws_iam_role_policy" "task" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid      = "PhotosBucket"
-      Effect   = "Allow"
-      Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-      Resource = "arn:aws:s3:::${var.photos_bucket_name}/*"
-    }]
+    Statement = [
+      {
+        Sid      = "PhotoObjects"
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+        Resource = "arn:aws:s3:::${var.photos_bucket_name}/*"
+      },
+      {
+        Sid      = "ListAccountPhotos"
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = "arn:aws:s3:::${var.photos_bucket_name}"
+        Condition = {
+          StringLike = { "s3:prefix" = ["recipes/*"] }
+        }
+      },
+    ]
   })
 }
 

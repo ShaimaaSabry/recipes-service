@@ -9,8 +9,8 @@ import (
 )
 
 type recipeRepository interface {
-	// GetRecipes returns the owner's recipes, sorted by name.
-	GetRecipes(ctx context.Context, owner owner.ID) ([]model.Recipe, error)
+	// GetRecipes returns the owner's recipes, by name, with their ingredients and steps.
+	GetRecipes(ctx context.Context, owner owner.ID) ([]*model.Recipe, error)
 }
 
 type Interactor struct {
@@ -25,6 +25,6 @@ type Query struct {
 	Owner owner.ID
 }
 
-func (i *Interactor) Execute(ctx context.Context, query Query) ([]model.Recipe, error) {
+func (i *Interactor) Execute(ctx context.Context, query Query) ([]*model.Recipe, error) {
 	return i.recipeRepository.GetRecipes(ctx, query.Owner)
 }

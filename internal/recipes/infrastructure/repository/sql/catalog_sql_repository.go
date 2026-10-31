@@ -280,12 +280,18 @@ func itemError(err error, item *model.GroceryItem, action string) error {
 	}
 }
 
-// DeleteItem also deletes the item's units and conversions (ON DELETE CASCADE).
+// DeleteItem also deletes the item's units and conversions (ON DELETE CASCADE). It fails with
+// model.ErrItemInUse while a recipe or the grocery list uses the item.
 func (r *CatalogSqlRepository) DeleteItem(ctx context.Context, owner owner.ID, id uuid.UUID) error {
-	if err := r.db.WithContext(ctx).Where("owner_id = ? AND id = ?", string(owner), id).Delete(&itemDBO{}).Error; err != nil {
+	err := r.db.WithContext(ctx).Where("owner_id = ? AND id = ?", string(owner), id).Delete(&itemDBO{}).Error
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, gorm.ErrForeignKeyViolated):
+		return model.ErrItemInUse
+	default:
 		return fmt.Errorf("delete item: %w", err)
 	}
-	return nil
 }
 
 // ---------------------------------------------------------------------------
@@ -355,7 +361,7 @@ func (r *CatalogSqlRepository) DeleteOwnerData(ctx context.Context, owner owner.
 func toCategoryDBO(c *model.Category) *categoryDBO {
 	return &categoryDBO{
 		ID: c.ID(), OwnerID: string(c.Owner()), Name: c.Name(), Emoji: c.Emoji(),
-		Source: string(c.Source()), SystemKey: systemKeyDBO(c.SystemKey()), Hidden: c.Hidden(),
+		Source: string(c.Source()), SystemKey: optional(c.SystemKey()), Hidden: c.Hidden(),
 	}
 }
 
@@ -370,15 +376,8 @@ func toCategory(d categoryDBO) *model.Category {
 func toItemDBO(i *model.GroceryItem) *itemDBO {
 	return &itemDBO{
 		ID: i.ID(), OwnerID: string(i.Owner()), Name: i.Name(), Emoji: i.Emoji(), CategoryID: i.CategoryID(),
-		Source: string(i.Source()), SystemKey: systemKeyDBO(i.SystemKey()), Hidden: i.Hidden(),
+		Source: string(i.Source()), SystemKey: optional(i.SystemKey()), Hidden: i.Hidden(),
 	}
-}
-
-func systemKeyDBO(key string) *string {
-	if key == "" {
-		return nil
-	}
-	return &key
 }
 
 func orEmpty[T any](list []T) []T {
@@ -386,4 +385,33 @@ func orEmpty[T any](list []T) []T {
 		return []T{}
 	}
 	return list
+}
+
+// ItemUsage says which units the owner's recipes and grocery list use the item in.
+func (r *CatalogSqlRepository) ItemUsage(ctx context.Context, owner owner.ID, itemID uuid.UUID) (model.ItemUsage, error) {
+	var usage model.ItemUsage
+	err := r.db.WithContext(ctx).Model(&ingredientDBO{}).Distinct("unit_id").
+		Where("owner_id = ? AND item_id = ?", string(owner), itemID).Pluck("unit_id", &usage.RecipeUnitIDs).Error
+	if err != nil {
+		return model.ItemUsage{}, fmt.Errorf("item usage: %w", err)
+	}
+	err = r.db.WithContext(ctx).Model(&groceryLineDBO{}).
+		Where("owner_id = ? AND item_id = ?", string(owner), itemID).Pluck("unit_id", &usage.ListUnitIDs).Error
+	if err != nil {
+		return model.ItemUsage{}, fmt.Errorf("item usage: %w", err)
+	}
+	return usage, nil
+}
+
+// ItemsByID returns the owner's items, keyed by ID.
+func (r *CatalogSqlRepository) ItemsByID(ctx context.Context, owner owner.ID) (map[uuid.UUID]*model.GroceryItem, error) {
+	items, err := r.GetItems(ctx, owner)
+	if err != nil {
+		return nil, err
+	}
+	byID := make(map[uuid.UUID]*model.GroceryItem, len(items))
+	for _, item := range items {
+		byID[item.ID()] = item
+	}
+	return byID, nil
 }

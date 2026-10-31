@@ -476,6 +476,82 @@
                 }
             }
         },
+        "/grocery-list": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "One line per item, in the order lines were first added.",
+                "tags": [
+                    "grocery list"
+                ],
+                "summary": "Get the grocery list",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.groceryListDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/grocery-list/actions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Applies the actions in order, each on its own, and returns what happened to each\nand the list after them. Lines are named by item:\n- add {itemId, unitId, quantity}: onto the item's line, converted into its unit\n- setQuantity {itemId, quantity}: the amount, by hand, in the line's unit\n- setUnit {itemId, unitId}: another unit the item is bought in, converting the amount\n- check / uncheck / remove {itemId}, and clearChecked\n\nEvery action has an ID the app makes once. Resending an action already applied\nchanges nothing (outcome alreadyApplied), so after a dropped connection the app\njust sends its queue again. A rejected action changed nothing and can be sent again\nonce fixed: missingConversion says which conversion to ask the user for. Up to 200\nactions per request.",
+                "tags": [
+                    "grocery list"
+                ],
+                "summary": "Change the grocery list",
+                "parameters": [
+                    {
+                        "description": "The actions, in order",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.groceryActionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.groceryActionsDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/items": {
             "post": {
                 "security": [
@@ -819,6 +895,139 @@
                 }
             }
         },
+        "/meals": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The planned meals, in the order they were planned.",
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Get the upcoming menu",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.mealDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/meals/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The app makes the meal's ID (a UUID), so it can plan meals offline and send them\nlater. Sending the same meal again just saves it again.",
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Plan a meal, or change one",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meal ID, made by the app",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The recipe and number of people",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.planMealRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.mealDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Not a UUID, or not one of the account's recipes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Another account's meal has this ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The grocery list is left as it is. Removing a meal that's already gone succeeds.",
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Take a meal off the menu",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meal ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Not a UUID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/recipes": {
             "get": {
                 "security": [
@@ -826,6 +1035,7 @@
                         "BearerAuth": []
                     }
                 ],
+                "description": "By name, each with its ingredients and steps.",
                 "tags": [
                     "recipes"
                 ],
@@ -855,18 +1065,19 @@
                         "BearerAuth": []
                     }
                 ],
+                "description": "Each ingredient is one of the account's grocery items, in a unit it's cooked in (or,\nfor an item nobody cooks with, one it's bought in).",
                 "tags": [
                     "recipes"
                 ],
                 "summary": "Create a recipe",
                 "parameters": [
                     {
-                        "description": "Create recipe payload",
+                        "description": "The recipe",
                         "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.createRecipeRequest"
+                            "$ref": "#/definitions/api.recipeRequest"
                         }
                     }
                 ],
@@ -890,9 +1101,337 @@
                             "type": "object",
                             "additionalProperties": true
                         }
+                    }
+                }
+            }
+        },
+        "/recipes/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Pass servings to get the ingredient amounts for that many people.",
+                "tags": [
+                    "recipes"
+                ],
+                "summary": "Get a recipe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Recipe ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     },
-                    "409": {
-                        "description": "Conflict",
+                    {
+                        "type": "integer",
+                        "description": "Scale the ingredients to this many people (1 to 99)",
+                        "name": "servings",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.recipeDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Replaces its name, servings, ingredients and steps. The photo stays.",
+                "tags": [
+                    "recipes"
+                ],
+                "summary": "Change a recipe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Recipe ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The recipe",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.recipeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.recipeDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Its planned meals and photo go with it. What it added to the grocery list stays.",
+                "tags": [
+                    "recipes"
+                ],
+                "summary": "Delete a recipe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Recipe ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/recipes/{id}/photo": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The previous photo is deleted.",
+                "tags": [
+                    "recipes"
+                ],
+                "summary": "Set a recipe's photo to one just uploaded",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Recipe ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The photoKey from the upload link",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.attachPhotoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.recipeDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Not uploaded, too large, or not an image",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "503": {
+                        "description": "Photos aren't set up where the service runs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "recipes"
+                ],
+                "summary": "Remove a recipe's photo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Recipe ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.recipeDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/recipes/{id}/photo/upload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload the image itself with the returned method, URL and headers, within 15\nminutes, then attach it with PUT /recipes/{id}/photo. Photos up to 10 MB.",
+                "tags": [
+                    "recipes"
+                ],
+                "summary": "Get a link to upload a recipe photo to",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Recipe ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The photo's type",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.photoUploadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.photoUploadDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "503": {
+                        "description": "Photos aren't set up where the service runs",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -917,6 +1456,17 @@
                     "description": "Name is the full name Apple shows the app on the first sign-in only. Optional.",
                     "type": "string",
                     "maxLength": 200
+                }
+            }
+        },
+        "api.attachPhotoRequest": {
+            "type": "object",
+            "required": [
+                "photoKey"
+            ],
+            "properties": {
+                "photoKey": {
+                    "type": "string"
                 }
             }
         },
@@ -1049,22 +1599,6 @@
                 }
             }
         },
-        "api.createRecipeRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "id": {
-                    "description": "ID is optional; the app sends the one it created, possibly while offline.",
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "api.devSignInRequest": {
             "type": "object",
             "required": [
@@ -1132,6 +1666,140 @@
                 }
             }
         },
+        "api.groceryActionDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "type"
+            ],
+            "properties": {
+                "id": {
+                    "description": "ID is made by the app, once per action: resending the same action is then harmless.",
+                    "type": "string"
+                },
+                "itemId": {
+                    "description": "ItemID names the line, for every type but clearChecked.",
+                    "type": "string"
+                },
+                "quantity": {
+                    "description": "Quantity is the amount for add and setQuantity.",
+                    "type": "number",
+                    "example": 2
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "add",
+                        "setQuantity",
+                        "setUnit",
+                        "check",
+                        "uncheck",
+                        "remove",
+                        "clearChecked"
+                    ],
+                    "example": "add"
+                },
+                "unitId": {
+                    "description": "UnitID is the amount's unit for add, and the new unit for setUnit.",
+                    "type": "string"
+                }
+            }
+        },
+        "api.groceryActionResultDTO": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "description": "Error says why a rejected action was refused.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "missingConversion": {
+                    "description": "MissingConversion is set when the action needs a conversion the item doesn't have yet.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.missingConversionDTO"
+                        }
+                    ]
+                },
+                "outcome": {
+                    "type": "string",
+                    "enum": [
+                        "applied",
+                        "alreadyApplied",
+                        "rejected"
+                    ]
+                }
+            }
+        },
+        "api.groceryActionsDTO": {
+            "type": "object",
+            "properties": {
+                "lines": {
+                    "description": "Lines is the list after the actions; it replaces the app's preview.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.groceryLineDTO"
+                    }
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.groceryActionResultDTO"
+                    }
+                }
+            }
+        },
+        "api.groceryActionsRequest": {
+            "type": "object",
+            "required": [
+                "actions"
+            ],
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "maxItems": 200,
+                    "items": {
+                        "$ref": "#/definitions/api.groceryActionDTO"
+                    }
+                }
+            }
+        },
+        "api.groceryLineDTO": {
+            "type": "object",
+            "properties": {
+                "buyQuantity": {
+                    "type": "number",
+                    "example": 1
+                },
+                "checked": {
+                    "type": "boolean"
+                },
+                "itemId": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "description": "Quantity is exact (0.04 after 2 tbsp of oil); BuyQuantity is what to show, rounded up to\nwhole numbers for units sold whole (1 bottle).",
+                    "type": "number",
+                    "example": 0.04
+                },
+                "unitId": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.groceryListDTO": {
+            "type": "object",
+            "properties": {
+                "lines": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.groceryLineDTO"
+                    }
+                }
+            }
+        },
         "api.hiddenRequest": {
             "type": "object",
             "required": [
@@ -1142,6 +1810,26 @@
                     "description": "Hidden leaves the record out of the app's pickers; false shows it again.",
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "api.ingredientDTO": {
+            "type": "object",
+            "required": [
+                "itemId",
+                "quantity",
+                "unitId"
+            ],
+            "properties": {
+                "itemId": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number",
+                    "example": 2
+                },
+                "unitId": {
+                    "type": "string"
                 }
             }
         },
@@ -1192,14 +1880,165 @@
                 }
             }
         },
+        "api.mealDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "plannedAt": {
+                    "type": "string"
+                },
+                "recipeId": {
+                    "type": "string"
+                },
+                "servings": {
+                    "type": "integer",
+                    "example": 4
+                }
+            }
+        },
+        "api.missingConversionDTO": {
+            "type": "object",
+            "properties": {
+                "fromUnitId": {
+                    "description": "Ask the user \"1 fromUnit = ? toUnit\", then save it with POST /items/{id}/conversions.",
+                    "type": "string"
+                },
+                "itemId": {
+                    "type": "string"
+                },
+                "toUnitId": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.photoUploadDTO": {
+            "type": "object",
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "method": {
+                    "type": "string",
+                    "example": "PUT"
+                },
+                "photoKey": {
+                    "description": "PhotoKey is what to attach to the recipe once the upload is done.",
+                    "type": "string"
+                },
+                "uploadUrl": {
+                    "description": "Upload the image with this method, URL and headers (the body is the image itself).",
+                    "type": "string"
+                }
+            }
+        },
+        "api.photoUploadRequest": {
+            "type": "object",
+            "required": [
+                "contentType"
+            ],
+            "properties": {
+                "contentType": {
+                    "type": "string",
+                    "enum": [
+                        "image/jpeg",
+                        "image/png",
+                        "image/heic",
+                        "image/webp"
+                    ],
+                    "example": "image/jpeg"
+                }
+            }
+        },
+        "api.planMealRequest": {
+            "type": "object",
+            "required": [
+                "recipeId",
+                "servings"
+            ],
+            "properties": {
+                "recipeId": {
+                    "type": "string"
+                },
+                "servings": {
+                    "type": "integer",
+                    "maximum": 99,
+                    "minimum": 1,
+                    "example": 4
+                }
+            }
+        },
         "api.recipeDTO": {
             "type": "object",
             "properties": {
                 "id": {
                     "type": "string"
                 },
+                "ingredients": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ingredientDTO"
+                    }
+                },
                 "name": {
+                    "type": "string",
+                    "example": "Shakshuka"
+                },
+                "photoUrl": {
+                    "description": "PhotoURL is where the photo is served from, or null.",
                     "type": "string"
+                },
+                "servings": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api.recipeRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "servings"
+            ],
+            "properties": {
+                "ingredients": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ingredientDTO"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Shakshuka"
+                },
+                "servings": {
+                    "description": "Servings is how many people the ingredient amounts are for.",
+                    "type": "integer",
+                    "maximum": 99,
+                    "minimum": 1,
+                    "example": 2
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Warm the olive oil in a wide pan."
+                    ]
                 }
             }
         },

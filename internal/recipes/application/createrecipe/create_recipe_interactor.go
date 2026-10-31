@@ -3,6 +3,7 @@ package createrecipe
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 
@@ -10,32 +11,43 @@ import (
 	"github.com/mamienellie/recipes-service/internal/shared/owner"
 )
 
+type catalogRepository interface {
+	GetUnits(ctx context.Context) ([]model.Unit, error)
+	ItemsByID(ctx context.Context, owner owner.ID) (map[uuid.UUID]*model.GroceryItem, error)
+}
+
 type recipeRepository interface {
-	// CreateRecipe fails with apperrors.ErrConflict if the owner already has a recipe with that id.
 	CreateRecipe(ctx context.Context, recipe *model.Recipe) error
 }
 
 type Interactor struct {
-	recipeRepository recipeRepository
+	catalogRepository catalogRepository
+	recipeRepository  recipeRepository
 }
 
-func NewInteractor(recipeRepository recipeRepository) *Interactor {
-	return &Interactor{recipeRepository: recipeRepository}
+func NewInteractor(catalogRepository catalogRepository, recipeRepository recipeRepository) *Interactor {
+	return &Interactor{catalogRepository: catalogRepository, recipeRepository: recipeRepository}
 }
 
 type Command struct {
-	Owner owner.ID
-	// ID is set by the app, which creates recipes while offline; when empty one is generated.
-	ID   string
-	Name string
+	Owner   owner.ID
+	Details model.RecipeDetails
 }
 
 func (i *Interactor) Execute(ctx context.Context, command Command) (*model.Recipe, error) {
-	id := command.ID
-	if id == "" {
-		id = uuid.NewString()
+	units, err := i.catalogRepository.GetUnits(ctx)
+	if err != nil {
+		return nil, err
 	}
-	recipe, err := model.NewRecipe(id, command.Owner, command.Name)
+	items, err := i.catalogRepository.ItemsByID(ctx, command.Owner)
+	if err != nil {
+		return nil, err
+	}
+	id, err := uuid.NewV7()
+	if err != nil {
+		return nil, fmt.Errorf("create recipe: %w", err)
+	}
+	recipe, err := model.NewRecipe(id, command.Owner, command.Details, items, model.NewUnits(units))
 	if err != nil {
 		return nil, err
 	}

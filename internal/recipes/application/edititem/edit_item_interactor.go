@@ -16,6 +16,7 @@ type itemRepository interface {
 	FindCategory(ctx context.Context, owner owner.ID, id uuid.UUID) (*model.Category, error)
 	FindItem(ctx context.Context, owner owner.ID, id uuid.UUID) (*model.GroceryItem, error)
 	FindItemByName(ctx context.Context, owner owner.ID, name string) (*model.GroceryItem, error)
+	ItemUsage(ctx context.Context, owner owner.ID, itemID uuid.UUID) (model.ItemUsage, error)
 	SaveItem(ctx context.Context, item *model.GroceryItem) error
 }
 
@@ -71,6 +72,14 @@ func (i *Interactor) Execute(ctx context.Context, command Command) (*model.Groce
 	}
 	if taken != nil && taken.ID() != item.ID() {
 		return nil, model.NameTaken("grocery item", taken.Name(), taken.Hidden())
+	}
+
+	usage, err := i.itemRepository.ItemUsage(ctx, command.Owner, item.ID())
+	if err != nil {
+		return nil, err
+	}
+	if err := usage.Allows(item); err != nil {
+		return nil, err
 	}
 
 	if err := i.itemRepository.SaveItem(ctx, item); err != nil {

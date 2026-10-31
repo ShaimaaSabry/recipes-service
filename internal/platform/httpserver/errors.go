@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -17,7 +18,7 @@ import (
 // ErrorHandler turns the last error a handler added with ctx.Error into a JSON response:
 //
 //	{"errors":{"name":"is required"}}   400, for a body that is malformed or fails validation
-//	{"error":"<message>"}               400/401/404/409 for apperrors kinds, 500 for anything else
+//	{"error":"<message>"}               400/401/404/409/503 for apperrors kinds, 500 for anything else
 func ErrorHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
@@ -80,11 +81,20 @@ func handleValidationErrors(c *gin.Context, err error) bool {
 	}
 	fields := make(map[string]string, len(verrs))
 	for _, fe := range verrs {
-		// Field() is the JSON name, thanks to the tag name func registered in New.
-		fields[fe.Field()] = humanizeValidationMsg(fe)
+		fields[fieldPath(fe)] = humanizeValidationMsg(fe)
 	}
 	writeJSONFieldErrors(c, fields)
 	return true
+}
+
+// fieldPath is where the field is in the JSON body: "name", or "actions[0].id" inside a list.
+// The namespace is in JSON names, thanks to the tag name func registered in New, and starts with
+// the request type's name, which is dropped.
+func fieldPath(fe validator.FieldError) string {
+	if _, path, ok := strings.Cut(fe.Namespace(), "."); ok {
+		return path
+	}
+	return fe.Field()
 }
 
 func humanizeValidationMsg(fe validator.FieldError) string {
@@ -118,6 +128,8 @@ func handleAppError(c *gin.Context, err error) bool {
 		writeJSONError(c, http.StatusNotFound, err.Error())
 	case errors.Is(err, apperrors.ErrConflict):
 		writeJSONError(c, http.StatusConflict, err.Error())
+	case errors.Is(err, apperrors.ErrUnavailable):
+		writeJSONError(c, http.StatusServiceUnavailable, err.Error())
 	default:
 		return false
 	}

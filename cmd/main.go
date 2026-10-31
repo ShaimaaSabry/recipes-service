@@ -18,6 +18,7 @@ import (
 	"github.com/mamienellie/recipes-service/internal/platform/database"
 	"github.com/mamienellie/recipes-service/internal/platform/httpserver"
 	"github.com/mamienellie/recipes-service/internal/recipes"
+	"github.com/mamienellie/recipes-service/internal/recipes/infrastructure/photostorage"
 )
 
 // @title        MamieNellie API
@@ -57,7 +58,13 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	recipesModule, err := recipes.New(db)
+	var photos recipes.PhotoStorage = photostorage.Disabled{}
+	if cfg.PhotosBucket != "" {
+		if photos, err = photostorage.NewS3(ctx, cfg.PhotosBucket); err != nil {
+			return err
+		}
+	}
+	recipesModule, err := recipes.New(db, recipes.Settings{Photos: photos, PhotosURL: cfg.PhotosURL})
 	if err != nil {
 		return err
 	}

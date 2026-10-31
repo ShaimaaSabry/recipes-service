@@ -77,6 +77,15 @@ func (i GroceryItem) Factor(units Units, from, to uuid.UUID) (float64, bool) {
 	return Factor(units, i.conversions, from, to)
 }
 
+// RecipeUnitIDs are the units recipes may measure the item in: its cook units, or for something
+// nobody cooks with, the units it's bought in.
+func (i GroceryItem) RecipeUnitIDs() []uuid.UUID {
+	if len(i.details.CookUnitIDs) > 0 {
+		return i.details.CookUnitIDs
+	}
+	return i.details.BuyUnitIDs
+}
+
 // Edit replaces what the owner fills in, and the item's conversions. Starter items can be edited
 // too, and stay starter ones.
 func (i *GroceryItem) Edit(details ItemDetails, conversions []Conversion, units Units) error {
